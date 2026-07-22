@@ -50,4 +50,13 @@
 - KeyValueRecord.key unique per store (not globally) — natural scoping.
 - RequestQueueItem.uniqueKey dedup constraint per queue.
 - Dataset, KeyValueStore, RequestQueue each have slug unique within workspace for API reference.
-- Next target: first minimal API/application shell for storage-aware actor runs or health + config backend slice.
+- Next target: minimal API/application shell.
+
+### 2026-07-22 (loop 6 — backend application shell)
+- Chose Hono as HTTP framework — minimal, TypeScript-native, excellent testability via app.request().
+- Chose tsx as dev runner — zero-config TypeScript execution with watch mode.
+- Separated concerns: src/config.ts (env + Prisma) from src/index.ts (routes + server).
+- Health endpoint returns structured JSON with graceful DB-disconnected status (no crash on missing DB).
+- Used process.env.VITEST guard to prevent server.listen during test imports.
+- Favors graceful degradation over hard failures for missing external dependencies at boot.
+- Next target: first minimal actor run creation API endpoint with typed input validation.

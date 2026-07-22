@@ -48,3 +48,12 @@
   - Added indexes on dataset sequence, queue status
   - Updated Workspace with reverse relations for all 3 storage families
   - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.
+- LOOP 6: Created minimal backend application shell.
+  - Added Hono HTTP server with GET /health endpoint
+  - Added typed config/env module (src/config.ts)
+  - Added safe Prisma client singleton with graceful DB check
+  - Health endpoint returns structured JSON: status, service, version, timestamp, db status
+  - Added dev (tsx watch), start (tsx), build (tsc) scripts
+  - Added hono, @hono/node-server, tsx dependencies
+  - Fixed all lint/typecheck issues across source and test
+  - Verified: lint, typecheck, test (health shape), runtime server boot, live endpoint response.

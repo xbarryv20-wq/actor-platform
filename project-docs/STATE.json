@@ -1,7 +1,7 @@
 {
-  "current_phase": "Phase 4 - Storage (schema)",
-  "current_goal": "Add first structured storage layer to the Prisma schema",
-  "current_task": "Add Dataset, DatasetItem, KeyValueStore, KeyValueRecord, RequestQueue, RequestQueueItem models",
+  "current_phase": "Phase 0 - Foundation (app shell)",
+  "current_goal": "Create first minimal backend application shell with typed config and health endpoint",
+  "current_task": "Add HTTP server, config module, health route, test, scripts",
   "completed_tasks": [
     "Initialized project delivery docs",
     "Audited repository",
@@ -12,14 +12,16 @@
     "Added explicit relations and uniqueness constraints",
     "Extended schema with Actor, ActorVersion, ActorRun models + ActorRunStatus enum",
     "Extended schema with Dataset, DatasetItem, KeyValueStore, KeyValueRecord, RequestQueue, RequestQueueItem",
-    "All storage models scoped to Workspace with optional ActorRun provenance link",
-    "Added uniqueness constraints: slug per workspace for Dataset/KV/Queue, key per store, uniqueKey per queue",
-    "Added indexes for dataset sequence order, queue status",
-    "Verified: prisma validate, prisma generate, lint, typecheck, test all pass"
+    "Created minimal backend app shell with Hono HTTP server",
+    "Added typed config/env module with safe Prisma client singleton",
+    "Added GET /health endpoint returning structured payload with DB status",
+    "Added dev/start/build scripts using tsx",
+    "Fixed ESLint compliance and type safety across all new modules",
+    "Verified: lint, typecheck, test (health endpoint shape), runtime server start, live endpoint response"
   ],
   "blocked_tasks": [],
   "next_tasks": [
-    "Add the first minimal API/application shell for storage-aware actor runs or a health + config backend slice",
+    "Implement the first minimal actor run creation API endpoint with typed input validation and workspace-scoped access",
     "Set up CI baseline",
     "Implement first vertical slice: user model + auth"
   ],
@@ -30,8 +32,8 @@
   ],
   "last_verification": {
     "status": "passed",
-    "commands": ["pnpm lint", "pnpm typecheck", "pnpm test", "pnpm prisma:validate", "pnpm prisma:generate"],
-    "notes": "All 5 checks pass. Extended schema with 6 new storage models. 13 models total, 2 enums, 0 new enums (RequestQueueItem.status is String-based). 7 unique constraints, 6 indexes."
+    "commands": ["pnpm lint", "pnpm typecheck", "pnpm test", "pnpm start (runtime boot + live health check)"],
+    "notes": "All static checks pass. Server boots. GET /health returns structured JSON with graceful DB-disconnected handling. 11 total unique constraints, 8 total indexes across 13 models."
   },
-  "last_updated": "2026-07-22T22:17:00Z"
+  "last_updated": "2026-07-22T22:23:00Z"
 }

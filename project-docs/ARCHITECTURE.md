@@ -162,13 +162,14 @@ The platform should support recurring execution via schedules and API-driven run
 - Node.js + TypeScript project initialized with pnpm.
 - Git repository initialized (first commit b128a58, 26 files).
 - ROOT: LOOP.md, VERIFIER.md, FIRST_LOOP_PROMPT.md, package.json, tsconfig.json, eslint.config.js, .prettierrc, vitest.config.ts, .gitignore, .env, .env.example, src/, test/, prisma/, project-docs/.
-- Tooling: TypeScript 5.9, ESLint 9.39, Vitest 3.2, Prettier 3.9, Prisma 6.19.3.
-- Runnable commands: `pnpm lint` (pass), `pnpm typecheck` (pass), `pnpm test` (pass), `pnpm prisma:validate` (pass), `pnpm prisma:generate` (pass).
+- Tooling: TypeScript 5.9, ESLint 9.39, Vitest 3.2, Prettier 3.9, Prisma 6.19.3, Hono 4.12, tsx 4.23.
+- Runnable commands: `pnpm dev` (hot-reload), `pnpm start`, `pnpm build`, `pnpm lint` (pass), `pnpm typecheck` (pass), `pnpm test` (pass), `pnpm prisma:validate` (pass), `pnpm prisma:generate` (pass).
 - Schema (13 models, 2 enums):
   - Tenancy: User, Organization, Membership (MembershipRole), Workspace
   - Execution: Actor, ActorVersion, ActorRun (ActorRunStatus)
   - Storage: Dataset, DatasetItem, KeyValueStore, KeyValueRecord, RequestQueue, RequestQueueItem
-- No CI, no Docker, no API routes, no frontend.
+- Backend: Hono HTTP server on configurable PORT, GET /health endpoint returning structured JSON with graceful DB-disconnected handling.
+- No CI, no Docker, no auth, no CRUD routes, no frontend.
 
 ### Available tooling:
 - Node.js v25.8.2
@@ -181,6 +182,6 @@ The platform should support recurring execution via schedules and API-driven run
 - Multi-tenant modular SaaS platform as described above.
 
 ### GAP:
-- Foundation scaffolding, execution-domain schema, and structured storage models are in place (13 models, 2 enums across tenancy + actor + run + storage domains), but the full platform remains aspirational.
-- Next gap: first minimal API/application shell for storage-aware actor runs or health + config backend slice.
-- No runtime API, no worker, no frontend, no CI, no Docker yet.
+- Foundation scaffolding, execution-domain schema, structured storage models, and backend app shell are in place (13 models, Hono HTTP server, health endpoint), but the full platform remains aspirational.
+- Next gap: first minimal actor run creation API endpoint with typed input validation and workspace-scoped access.
+- No CI, no Docker, no auth, no CRUD beyond health, no frontend yet.

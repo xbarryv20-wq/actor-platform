@@ -15,15 +15,21 @@
 - [x] Verify lint, typecheck, test all pass
 - [x] Initialize Git repo
 - [x] Initialize Prisma with first entities (User, Organization, Workspace, Membership)
+- [x] Add Actor, ActorVersion, and ActorRun models
+- [x] Create minimal HTTP server (Hono) with GET /health endpoint
+- [x] Add typed config/env module
+- [x] Add dev/start/build scripts
+- [x] Add health endpoint test
 
 ## Next
-- [x] Add Actor, ActorVersion, and ActorRun models
+- [ ] Implement the first minimal actor run creation API endpoint with typed input validation and workspace-scoped access
 - [ ] Set up CI baseline
 - [ ] Implement first vertical slice: user model + auth
 
 ## Phase 0 — Foundation
 - [x] Confirm database and ORM choice (PostgreSQL + Prisma 6)
 - [x] Confirm environment variable strategy
+- [x] Confirm HTTP server and routing approach (Hono)
 - [ ] Confirm queue/worker strategy
 - [ ] Confirm logging and error handling baseline
 - [ ] Confirm CI or add baseline CI
