@@ -22,3 +22,18 @@
   - Installed 156 dev dependencies
   - Verified: lint pass, typecheck pass, test pass (1/1)
 - Updated ARCHITECTURE.md ACTUAL section, STATE.json, TODO.md, CHANGELOG.md.
+- LOOP 3: Initialized Git repo and multi-tenant database foundation.
+  - git init + first commit (26 files, b128a58)
+  - Added Prisma 6.19.3 with PostgreSQL datasource
+  - Created schema: User, Organization, Workspace, Membership (with Role enum)
+  - Set up uniqueness constraints and explicit relations
+  - Added pnpm prisma:validate, prisma:generate, prisma:studio scripts
+  - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.
+  - Pinned Prisma to 6.x to avoid Prisma 7 config-breaking changes.
+- LOOP 4: Added execution-domain schema for actors and runs.
+  - Added ActorRunStatus enum: PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED
+  - Added Actor model (belongs to Workspace, unique slug per workspace)
+  - Added ActorVersion model (belongs to Actor, unique version per actor)
+  - Added ActorRun model (belongs to Actor + Workspace, optional ActorVersion, status, input/output JSON)
+  - Added indexes on workspaceId, actorId, status for ActorRun
+  - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.

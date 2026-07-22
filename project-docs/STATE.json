@@ -1,36 +1,36 @@
 {
-  "current_phase": "Phase 0 - Foundation",
-  "current_goal": "Establish project scaffolding and development foundations for the actor-based automation platform",
-  "current_task": "Initialize Node.js + TypeScript foundation toolchain",
+  "current_phase": "Phase 1 - Identity & Tenancy (schema) / Phase 2 - Actor Registry (schema)",
+  "current_goal": "Add execution-domain schema for actors and runs on verified tenancy foundation",
+  "current_task": "Add Actor, ActorVersion, ActorRun models + ActorRunStatus enum",
   "completed_tasks": [
-    "Initialized project delivery docs (LOOP.md, VERIFIER.md, FIRST_LOOP_PROMPT.md)",
-    "Created project-docs with all recommended files (11 total)",
-    "Added architecture guidance, domain model, API contracts, acceptance criteria",
-    "Executed repository audit: empty repo confirmed, tools detected",
-    "Initialized Node.js + TypeScript project with pnpm",
-    "Created tsconfig.json with strict settings",
-    "Created ESLint config (flat), Prettier config, Vitest config",
-    "Created .gitignore and .env.example",
-    "Created placeholder src/ and test/ files",
-    "Installed all dependencies (156 packages)",
-    "Verified: lint passes, typecheck passes, test passes (1/1)"
+    "Initialized project delivery docs",
+    "Audited repository",
+    "Initialized Node.js + TypeScript toolchain (lint, typecheck, test passing)",
+    "Initialized Git repo with first commit (26 files)",
+    "Set up Prisma 6.19.3 with PostgreSQL datasource",
+    "Created schema: User, Organization, Membership (Role enum), Workspace",
+    "Added explicit relations and uniqueness constraints",
+    "Extended schema with Actor, ActorVersion, ActorRun models + ActorRunStatus enum",
+    "Actor belongs to Workspace; ActorVersion belongs to Actor; ActorRun belongs to Actor + Workspace",
+    "Added uniqueness constraints: slug per workspace, version per actor",
+    "Added indexes for workspaceId, actorId, status on ActorRun",
+    "Verified: prisma validate, prisma generate, lint, typecheck, test all pass"
   ],
   "blocked_tasks": [],
   "next_tasks": [
-    "Initialize Git repo",
-    "Initialize Prisma schema with first entities (User, Organization, Workspace, Membership)",
+    "Add Dataset, KeyValueStore, and RequestQueue models as first structured storage layer",
     "Set up CI baseline",
     "Implement first vertical slice: user model + auth"
   ],
   "risks": [
-    "No .git initialized — first code commit has no history safety net",
-    "Docker not available on this machine — local dev will need direct PostgreSQL/Redis or documented alternative",
-    "Multi-tenant and execution security concerns are deferred until phase 1"
+    "Prisma 7.x is available but incompatible with current schema format — pinned to 6.19.3",
+    "Docker not available — migrations and runtime require a running PostgreSQL instance",
+    "No CI configured yet"
   ],
   "last_verification": {
     "status": "passed",
-    "commands": ["pnpm lint", "pnpm typecheck", "pnpm test"],
-    "notes": "Lint: clean. Typecheck: clean. Test: 1/1 passed (389ms). Toolchain fully operational."
+    "commands": ["pnpm lint", "pnpm typecheck", "pnpm test", "pnpm prisma:validate", "pnpm prisma:generate"],
+    "notes": "All 5 checks pass. Extended schema with Actor, ActorVersion, ActorRun + ActorRunStatus enum. 3 new models, 1 new enum, 6 fields nullable, 2 unique constraints, 3 indexes."
   },
-  "last_updated": "2026-07-22T21:23:00Z"
+  "last_updated": "2026-07-22T21:32:00Z"
 }

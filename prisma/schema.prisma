@@ -47,6 +47,14 @@ model Membership {
   @@unique([userId, organizationId])
 }
 
+enum ActorRunStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
 model Workspace {
   id             String   @id @default(cuid())
   organizationId String
@@ -56,6 +64,59 @@ model Workspace {
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
+  actors        Actor[]
+  runs          ActorRun[]
 
   @@unique([organizationId, slug])
+}
+
+model Actor {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  slug        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id])
+  versions  ActorVersion[]
+  runs      ActorRun[]
+
+  @@unique([workspaceId, slug])
+}
+
+model ActorVersion {
+  id              String   @id @default(cuid())
+  actorId         String
+  version         Int
+  sourceReference String?
+  changelog       String?
+  createdAt       DateTime @default(now())
+
+  actor Actor      @relation(fields: [actorId], references: [id])
+  runs  ActorRun[]
+
+  @@unique([actorId, version])
+}
+
+model ActorRun {
+  id             String          @id @default(cuid())
+  actorId        String
+  actorVersionId String?
+  workspaceId    String
+  status         ActorRunStatus  @default(PENDING)
+  input          Json?
+  output         Json?
+  errorMessage   String?
+  createdAt      DateTime        @default(now())
+  startedAt      DateTime?
+  finishedAt     DateTime?
+
+  actor        Actor         @relation(fields: [actorId], references: [id])
+  actorVersion ActorVersion? @relation(fields: [actorVersionId], references: [id])
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([actorId])
+  @@index([status])
 }

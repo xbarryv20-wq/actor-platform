@@ -25,3 +25,19 @@
 - Created placeholder src/index.ts and test/index.test.ts.
 - No Docker, no Prisma, no database, no frontend in this loop — per scope constraint.
 - Approved esbuild build script to unblock pnpm install.
+
+### 2026-07-22 (loop 3 — database foundation)
+- Initialized Git repo with first commit (26 files).
+- Set up Prisma 6.19.3 — pinned to v6 because Prisma 7 removed `url` from datasource block in favor of prisma.config.ts + adapter pattern.
+- Created tenancy schema: User, Organization, Membership (with OWNER/ADMIN/MEMBER roles), Workspace.
+- All verification checks pass (lint, typecheck, test, prisma validate, prisma generate).
+- Next target: Actor, ActorVersion, ActorRun models on this tenancy foundation.
+
+### 2026-07-22 (loop 4 — execution-domain schema)
+- Extended schema with Actor, ActorVersion, ActorRun + ActorRunStatus enum.
+- Actor scoped to Workspace for tenant isolation; ActorVersion scoped to Actor; ActorRun double-scoped to Actor + Workspace (direct workspaceId on ActorRun for query efficiency).
+- ActorRunStatus uses 5 states: PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED — minimal lifecycle.
+- input/output modeled as Json? — typed validation deferred to runtime.
+- actorVersionId on ActorRun is optional — version may not be pinned at run creation.
+- Added indexes on workspaceId, actorId, status for common query paths.
+- Next target: Dataset, KeyValueStore, RequestQueue as storage layer.

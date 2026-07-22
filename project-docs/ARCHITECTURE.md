@@ -160,11 +160,14 @@ The platform should support recurring execution via schedules and API-driven run
 
 ### ACTUAL:
 - Node.js + TypeScript project initialized with pnpm.
-- ROOT: LOOP.md, VERIFIER.md, FIRST_LOOP_PROMPT.md, package.json, tsconfig.json, eslint.config.js, .prettierrc, vitest.config.ts, .gitignore, .env.example, src/, test/, project-docs/.
-- Tooling: TypeScript 5.9, ESLint 9.39, Vitest 3.2, Prettier 3.9.
-- Runnable commands: `pnpm lint` (pass), `pnpm typecheck` (pass), `pnpm test` (pass).
-- No database, no CI, no Docker, no Git yet.
-- Stack chosen: Node.js + TypeScript with pnpm (matches LOOP.md preference).
+- Git repository initialized (first commit b128a58, 26 files).
+- ROOT: LOOP.md, VERIFIER.md, FIRST_LOOP_PROMPT.md, package.json, tsconfig.json, eslint.config.js, .prettierrc, vitest.config.ts, .gitignore, .env, .env.example, src/, test/, prisma/, project-docs/.
+- Tooling: TypeScript 5.9, ESLint 9.39, Vitest 3.2, Prettier 3.9, Prisma 6.19.3.
+- Runnable commands: `pnpm lint` (pass), `pnpm typecheck` (pass), `pnpm test` (pass), `pnpm prisma:validate` (pass), `pnpm prisma:generate` (pass).
+- Schema (7 models, 2 enums):
+  - Tenancy: User, Organization, Membership (MembershipRole), Workspace
+  - Execution: Actor, ActorVersion, ActorRun (ActorRunStatus)
+- No CI, no Docker, no API routes, no frontend.
 
 ### Available tooling:
 - Node.js v25.8.2
@@ -177,5 +180,6 @@ The platform should support recurring execution via schedules and API-driven run
 - Multi-tenant modular SaaS platform as described above.
 
 ### GAP:
-- Zero code exists — full gap between ACTUAL (empty) and TARGET (full platform).
-- First task: establish project scaffolding and development foundations.
+- Foundation scaffolding and execution-domain schema are in place (toolchain, tenancy + actor + run models), but the full platform remains aspirational.
+- Next gap: add structured storage models (Dataset, KeyValueStore, RequestQueue).
+- No runtime API, no worker, no frontend, no CI, no Docker yet.

@@ -13,38 +13,40 @@
 - [x] Add Vitest test framework
 - [x] Create .env.example
 - [x] Verify lint, typecheck, test all pass
+- [x] Initialize Git repo
+- [x] Initialize Prisma with first entities (User, Organization, Workspace, Membership)
 
 ## Next
-- [ ] Initialize Git repo
-- [ ] Initialize Prisma with first entities (User, Organization, Workspace, Membership)
+- [x] Add Actor, ActorVersion, and ActorRun models
+- [ ] Set up CI baseline
+- [ ] Implement first vertical slice: user model + auth
 
 ## Phase 0 — Foundation
-- [ ] Confirm frontend/backend structure
-- [ ] Confirm database and ORM choice
+- [x] Confirm database and ORM choice (PostgreSQL + Prisma 6)
+- [x] Confirm environment variable strategy
 - [ ] Confirm queue/worker strategy
-- [ ] Confirm environment variable strategy
 - [ ] Confirm logging and error handling baseline
 - [ ] Confirm CI or add baseline CI
 - [ ] Confirm Docker or local dev orchestration
 - [ ] Add missing developer setup docs
 
 ## Phase 1 — Identity & Tenancy
-- [ ] User model
+- [x] User model (schema)
+- [x] Organization/workspace model (schema)
+- [x] Memberships (schema)
+- [ ] Roles and permissions (runtime)
 - [ ] Auth flow
-- [ ] Organization/workspace model
-- [ ] Memberships
-- [ ] Roles and permissions
 - [ ] Protected routes and tenant scoping
 
 ## Phase 2 — Actor Registry
-- [ ] Actor model
-- [ ] Actor version model
+- [x] Actor model
+- [x] Actor version model
 - [ ] Actor input schema support
 - [ ] Actor metadata
 - [ ] Draft/publish workflow
 
 ## Phase 3 — Run Engine
-- [ ] Run model
+- [x] Run model
 - [ ] Run creation endpoint
 - [ ] Worker execution path
 - [ ] Status lifecycle

@@ -1,5 +1,18 @@
 # DOMAIN_MODEL.md
 
+## Status
+
+This file describes the **target** domain model. The ACTUAL schema may be a subset.
+
+### ACTUAL implementation (loop 4):
+- User, Organization, Membership (MembershipRole: OWNER, ADMIN, MEMBER), Workspace
+- Actor (belongs to Workspace, slug unique per workspace)
+- ActorVersion (belongs to Actor, version unique per actor, optional sourceReference, changelog)
+- ActorRun (belongs to Actor + Workspace, optional ActorVersion, status enum, input/output Json?, errorMessage?, timestamps)
+- ActorRunStatus: PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED
+
+Fields not yet in schema but listed below are aspirational targets.
+
 ## Purpose
 
 This file defines the core business entities for the platform and the intended relationships between them. It is meant to reduce schema drift, API mismatch, and UI confusion.
