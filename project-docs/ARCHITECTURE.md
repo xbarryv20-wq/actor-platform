@@ -164,9 +164,10 @@ The platform should support recurring execution via schedules and API-driven run
 - ROOT: LOOP.md, VERIFIER.md, FIRST_LOOP_PROMPT.md, package.json, tsconfig.json, eslint.config.js, .prettierrc, vitest.config.ts, .gitignore, .env, .env.example, src/, test/, prisma/, project-docs/.
 - Tooling: TypeScript 5.9, ESLint 9.39, Vitest 3.2, Prettier 3.9, Prisma 6.19.3.
 - Runnable commands: `pnpm lint` (pass), `pnpm typecheck` (pass), `pnpm test` (pass), `pnpm prisma:validate` (pass), `pnpm prisma:generate` (pass).
-- Schema (7 models, 2 enums):
+- Schema (13 models, 2 enums):
   - Tenancy: User, Organization, Membership (MembershipRole), Workspace
   - Execution: Actor, ActorVersion, ActorRun (ActorRunStatus)
+  - Storage: Dataset, DatasetItem, KeyValueStore, KeyValueRecord, RequestQueue, RequestQueueItem
 - No CI, no Docker, no API routes, no frontend.
 
 ### Available tooling:
@@ -180,6 +181,6 @@ The platform should support recurring execution via schedules and API-driven run
 - Multi-tenant modular SaaS platform as described above.
 
 ### GAP:
-- Foundation scaffolding and execution-domain schema are in place (toolchain, tenancy + actor + run models), but the full platform remains aspirational.
-- Next gap: add structured storage models (Dataset, KeyValueStore, RequestQueue).
+- Foundation scaffolding, execution-domain schema, and structured storage models are in place (13 models, 2 enums across tenancy + actor + run + storage domains), but the full platform remains aspirational.
+- Next gap: first minimal API/application shell for storage-aware actor runs or health + config backend slice.
 - No runtime API, no worker, no frontend, no CI, no Docker yet.

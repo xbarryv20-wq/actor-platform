@@ -4,12 +4,18 @@
 
 This file describes the **target** domain model. The ACTUAL schema may be a subset.
 
-### ACTUAL implementation (loop 4):
+### ACTUAL implementation (loop 5):
 - User, Organization, Membership (MembershipRole: OWNER, ADMIN, MEMBER), Workspace
 - Actor (belongs to Workspace, slug unique per workspace)
 - ActorVersion (belongs to Actor, version unique per actor, optional sourceReference, changelog)
 - ActorRun (belongs to Actor + Workspace, optional ActorVersion, status enum, input/output Json?, errorMessage?, timestamps)
 - ActorRunStatus: PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED
+- Dataset (belongs to Workspace, optional ActorRun, slug unique per workspace)
+- DatasetItem (belongs to Dataset, sequence-ordered, Json payload)
+- KeyValueStore (belongs to Workspace, optional ActorRun, slug unique per workspace)
+- KeyValueRecord (belongs to KeyValueStore, unique key per store, Json value, optional contentType)
+- RequestQueue (belongs to Workspace, optional ActorRun, slug unique per workspace)
+- RequestQueueItem (belongs to RequestQueue, uniqueKey dedup, String-based status, optional url/payload)
 
 Fields not yet in schema but listed below are aspirational targets.
 

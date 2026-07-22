@@ -66,6 +66,9 @@ model Workspace {
   organization Organization @relation(fields: [organizationId], references: [id])
   actors        Actor[]
   runs          ActorRun[]
+  datasets      Dataset[]
+  kvStores      KeyValueStore[]
+  requestQueues RequestQueue[]
 
   @@unique([organizationId, slug])
 }
@@ -115,8 +118,105 @@ model ActorRun {
   actor        Actor         @relation(fields: [actorId], references: [id])
   actorVersion ActorVersion? @relation(fields: [actorVersionId], references: [id])
   workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  datasets     Dataset[]
+  kvStores     KeyValueStore[]
+  requestQueues RequestQueue[]
 
   @@index([workspaceId])
   @@index([actorId])
   @@index([status])
+}
+
+model Dataset {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorRunId  String?
+  name        String
+  slug        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id])
+  actorRun  ActorRun?    @relation(fields: [actorRunId], references: [id])
+  items     DatasetItem[]
+
+  @@unique([workspaceId, slug])
+  @@index([actorRunId])
+}
+
+model DatasetItem {
+  id        String   @id @default(cuid())
+  datasetId String
+  sequence  Int
+  payload   Json
+  createdAt DateTime @default(now())
+
+  dataset Dataset @relation(fields: [datasetId], references: [id])
+
+  @@index([datasetId, sequence])
+}
+
+model KeyValueStore {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorRunId  String?
+  name        String
+  slug        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id])
+  actorRun  ActorRun?       @relation(fields: [actorRunId], references: [id])
+  records   KeyValueRecord[]
+
+  @@unique([workspaceId, slug])
+  @@index([actorRunId])
+}
+
+model KeyValueRecord {
+  id          String   @id @default(cuid())
+  storeId     String
+  key         String
+  value       Json
+  contentType String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store KeyValueStore @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, key])
+}
+
+model RequestQueue {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorRunId  String?
+  name        String
+  slug        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  actorRun  ActorRun?        @relation(fields: [actorRunId], references: [id])
+  items     RequestQueueItem[]
+
+  @@unique([workspaceId, slug])
+  @@index([actorRunId])
+}
+
+model RequestQueueItem {
+  id         String    @id @default(cuid())
+  queueId    String
+  uniqueKey  String
+  url        String?
+  payload    Json?
+  status     String    @default("PENDING")
+  retryCount Int       @default(0)
+  handledAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  queue RequestQueue @relation(fields: [queueId], references: [id])
+
+  @@unique([queueId, uniqueKey])
+  @@index([queueId, status])
 }

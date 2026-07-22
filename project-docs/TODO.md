@@ -54,10 +54,10 @@
 - [ ] Retry and cancellation behavior
 
 ## Phase 4 — Storage
-- [ ] Dataset model
-- [ ] Dataset item model
-- [ ] Key-value store model
-- [ ] Request queue model
+- [x] Dataset model
+- [x] Dataset item model
+- [x] Key-value store model
+- [x] Request queue model
 - [ ] Export/read endpoints
 
 ## Phase 5 — Automation

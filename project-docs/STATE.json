@@ -1,7 +1,7 @@
 {
-  "current_phase": "Phase 1 - Identity & Tenancy (schema) / Phase 2 - Actor Registry (schema)",
-  "current_goal": "Add execution-domain schema for actors and runs on verified tenancy foundation",
-  "current_task": "Add Actor, ActorVersion, ActorRun models + ActorRunStatus enum",
+  "current_phase": "Phase 4 - Storage (schema)",
+  "current_goal": "Add first structured storage layer to the Prisma schema",
+  "current_task": "Add Dataset, DatasetItem, KeyValueStore, KeyValueRecord, RequestQueue, RequestQueueItem models",
   "completed_tasks": [
     "Initialized project delivery docs",
     "Audited repository",
@@ -11,14 +11,15 @@
     "Created schema: User, Organization, Membership (Role enum), Workspace",
     "Added explicit relations and uniqueness constraints",
     "Extended schema with Actor, ActorVersion, ActorRun models + ActorRunStatus enum",
-    "Actor belongs to Workspace; ActorVersion belongs to Actor; ActorRun belongs to Actor + Workspace",
-    "Added uniqueness constraints: slug per workspace, version per actor",
-    "Added indexes for workspaceId, actorId, status on ActorRun",
+    "Extended schema with Dataset, DatasetItem, KeyValueStore, KeyValueRecord, RequestQueue, RequestQueueItem",
+    "All storage models scoped to Workspace with optional ActorRun provenance link",
+    "Added uniqueness constraints: slug per workspace for Dataset/KV/Queue, key per store, uniqueKey per queue",
+    "Added indexes for dataset sequence order, queue status",
     "Verified: prisma validate, prisma generate, lint, typecheck, test all pass"
   ],
   "blocked_tasks": [],
   "next_tasks": [
-    "Add Dataset, KeyValueStore, and RequestQueue models as first structured storage layer",
+    "Add the first minimal API/application shell for storage-aware actor runs or a health + config backend slice",
     "Set up CI baseline",
     "Implement first vertical slice: user model + auth"
   ],
@@ -30,7 +31,7 @@
   "last_verification": {
     "status": "passed",
     "commands": ["pnpm lint", "pnpm typecheck", "pnpm test", "pnpm prisma:validate", "pnpm prisma:generate"],
-    "notes": "All 5 checks pass. Extended schema with Actor, ActorVersion, ActorRun + ActorRunStatus enum. 3 new models, 1 new enum, 6 fields nullable, 2 unique constraints, 3 indexes."
+    "notes": "All 5 checks pass. Extended schema with 6 new storage models. 13 models total, 2 enums, 0 new enums (RequestQueueItem.status is String-based). 7 unique constraints, 6 indexes."
   },
-  "last_updated": "2026-07-22T21:32:00Z"
+  "last_updated": "2026-07-22T22:17:00Z"
 }

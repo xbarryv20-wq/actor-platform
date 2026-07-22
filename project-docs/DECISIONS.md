@@ -41,3 +41,13 @@
 - actorVersionId on ActorRun is optional — version may not be pinned at run creation.
 - Added indexes on workspaceId, actorId, status for common query paths.
 - Next target: Dataset, KeyValueStore, RequestQueue as storage layer.
+
+### 2026-07-22 (loop 5 — structured storage layer)
+- Extended schema with 6 storage models: Dataset, DatasetItem, KeyValueStore, KeyValueRecord, RequestQueue, RequestQueueItem.
+- All 3 top-level storage families scoped to Workspace with optional ActorRun provenance link.
+- No new enums — RequestQueueItem.status uses String defaulting to "PENDING"; deferred queue lifecycle to runtime.
+- DatasetItem.sequence provides stable ordering without reliance on createdAt.
+- KeyValueRecord.key unique per store (not globally) — natural scoping.
+- RequestQueueItem.uniqueKey dedup constraint per queue.
+- Dataset, KeyValueStore, RequestQueue each have slug unique within workspace for API reference.
+- Next target: first minimal API/application shell for storage-aware actor runs or health + config backend slice.

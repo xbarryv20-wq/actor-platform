@@ -37,3 +37,14 @@
   - Added ActorRun model (belongs to Actor + Workspace, optional ActorVersion, status, input/output JSON)
   - Added indexes on workspaceId, actorId, status for ActorRun
   - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.
+- LOOP 5: Added structured storage layer schema.
+  - Added Dataset (scoped to Workspace, optional ActorRun provenance)
+  - Added DatasetItem (scoped to Dataset, sequence-ordered, Json payload)
+  - Added KeyValueStore (scoped to Workspace, optional ActorRun provenance)
+  - Added KeyValueRecord (scoped to KeyValueStore, unique key per store, Json value)
+  - Added RequestQueue (scoped to Workspace, optional ActorRun provenance)
+  - Added RequestQueueItem (scoped to RequestQueue, uniqueKey dedup, String-based status)
+  - All storage models have slug unique per workspace
+  - Added indexes on dataset sequence, queue status
+  - Updated Workspace with reverse relations for all 3 storage families
+  - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.
