@@ -504,7 +504,7 @@ async function renderRun(){
         const icon = level==='ERROR'?'&#x2716;':level==='WARN'?'&#x26A0;':'&#x25B8;';
         html += '<span style="color:'+(level==='ERROR'?'#f87171':level==='WARN'?'#fbbf24':'#94a3b8')+'">'+icon+' ['+level+']</span> ';
         html += '<span style="color:#94a3b8;font-size:0.75rem">'+dateStr(l.timestamp||l.createdAt)+'</span>';
-        html += ' '+esc(l.message)+'\n';
+        html += ' '+esc(l.message)+String.fromCharCode(10);
       }
       html += '</pre></div></div>';
     }
