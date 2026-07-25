@@ -361,10 +361,10 @@ async function renderActors(){
     html += '<td>'+dateStr(a.createdAt)+'</td>';
     html += '<td style="text-align:right">';
     html += '<button class="btn btn-sm btn-outline" data-nav="actor">View</button> ';
-    if(a.status==='DRAFT') html += '<button class="btn btn-sm btn-success" onclick="doTransition(\'' + a.id + '\',\'publish\')">Publish</button> ';
-    if(a.status==='PUBLISHED') html += '<button class="btn btn-sm btn-warning" onclick="doTransition(\'' + a.id + '\',\'deprecate\')">Deprecate</button> ';
-    if(a.status==='DEPRECATED') html += '<button class="btn btn-sm btn-success" onclick="doTransition(\'' + a.id + '\',\'republish\')">Republish</button> ';
-    html += '<button class="btn btn-sm btn-danger" onclick="deleteActor(\'' + a.id + '\')">Del</button>';
+    if(a.status==='DRAFT') html += '<button class="btn btn-sm btn-success" onclick="doTransition(&#39;' + a.id + '&#39;,&#39;publish&#39;)">Publish</button> ';
+    if(a.status==='PUBLISHED') html += '<button class="btn btn-sm btn-warning" onclick="doTransition(&#39;' + a.id + '&#39;,&#39;deprecate&#39;)">Deprecate</button> ';
+    if(a.status==='DEPRECATED') html += '<button class="btn btn-sm btn-success" onclick="doTransition(&#39;' + a.id + '&#39;,&#39;republish&#39;)">Republish</button> ';
+    html += '<button class="btn btn-sm btn-danger" onclick="deleteActor(&#39;' + a.id + '&#39;)">Del</button>';
     html += '</td></tr>';
   }
   html += '</tbody></table></div></div>';
@@ -376,11 +376,11 @@ async function renderActor(){
   const actor = await api('/workspaces/'+WS.get()+'/actors/'+state.actorId);
   let html = '<div class="flex gap-1" style="margin-bottom:1rem">';
   html += '<button class="btn btn-outline" data-nav="actors">&larr; Back</button>';
-  if(actor.status==='DRAFT') html += '<button class="btn btn-success" onclick="doTransition(\'' + actor.id + '\',\'publish\')">Publish</button>';
-  if(actor.status==='PUBLISHED') html += '<button class="btn btn-warning" onclick="doTransition(\'' + actor.id + '\',\'deprecate\')">Deprecate</button>';
-  if(actor.status==='DEPRECATED') html += '<button class="btn btn-success" onclick="doTransition(\'' + actor.id + '\',\'republish\')">Republish</button>';
-  html += '<button class="btn btn-outline" onclick="showEditActor(\'' + actor.id + '\')">Edit</button>';
-  html += '<button class="btn btn-outline" onclick="showCreateRun(\'' + actor.id + '\')">Run</button>';
+  if(actor.status==='DRAFT') html += '<button class="btn btn-success" onclick="doTransition(&#39;' + actor.id + '&#39;,&#39;publish&#39;)">Publish</button>';
+  if(actor.status==='PUBLISHED') html += '<button class="btn btn-warning" onclick="doTransition(&#39;' + actor.id + '&#39;,&#39;deprecate&#39;)">Deprecate</button>';
+  if(actor.status==='DEPRECATED') html += '<button class="btn btn-success" onclick="doTransition(&#39;' + actor.id + '&#39;,&#39;republish&#39;)">Republish</button>';
+  html += '<button class="btn btn-outline" onclick="showEditActor(&#39;' + actor.id + '&#39;)">Edit</button>';
+  html += '<button class="btn btn-outline" onclick="showCreateRun(&#39;' + actor.id + '&#39;)">Run</button>';
   html += '</div>';
 
   html += '<div class="card"><div class="card-header"><h2>'+esc(actor.name)+'</h2>'+statusBadge(actor.status)+'</div><div class="card-body">';
@@ -471,7 +471,7 @@ async function renderRun(){
   let html = '<div class="flex gap-1" style="margin-bottom:1rem">';
   html += '<button class="btn btn-outline" data-nav="runs">&larr; Back</button>';
   if(run.status==='PENDING'||run.status==='RUNNING'){
-    html += '<button class="btn btn-danger" onclick="cancelRun(\'' + run.id + '\')">Cancel</button>';
+    html += '<button class="btn btn-danger" onclick="cancelRun(&#39;' + run.id + '&#39;)">Cancel</button>';
   }
   html += '</div>';
 
@@ -647,7 +647,7 @@ async function renderBilling(){
         html += '<td>$'+(p.priceCents/100).toFixed(2)+'/'+esc(p.interval)+'</td>';
         html += '<td>'+p.runLimit+' runs</td>';
         html += '<td>'+p.storageMb+' MB</td>';
-        html += '<td style="text-align:right"><button class="btn btn-sm btn-primary" onclick="subscribeToPlan(\'' + p.id + '\')">Subscribe</button></td></tr>';
+        html += '<td style="text-align:right"><button class="btn btn-sm btn-primary" onclick="subscribeToPlan(&#39;' + p.id + '&#39;)">Subscribe</button></td></tr>';
       }
       html += '</tbody></table></div></div>';
     }
@@ -694,7 +694,7 @@ async function renderMarketplaceListing(){
     const l = await api('/marketplace/'+state.marketplaceId);
     const a = l.actor||{};
     html += '<div class="card"><div class="card-header"><h2>'+esc(a.name||'Unnamed')+'</h2>';
-    html += '<button class="btn btn-primary" onclick="showCreateRun(\'' + a.id + '\')">Run This Actor</button>';
+    html += '<button class="btn btn-primary" onclick="showCreateRun(&#39;' + a.id + '&#39;)">Run This Actor</button>';
     html += '</div><div class="card-body">';
     html += '<div class="detail-label">ID</div><div class="detail-value mono">'+esc(a.id)+'</div>';
     html += '<div class="detail-label">Slug</div><div class="detail-value">'+esc(a.slug)+'</div>';
@@ -707,8 +707,8 @@ async function renderMarketplaceListing(){
     html += '<div class="detail-label">Listed</div><div class="detail-value">'+dateStr(l.createdAt)+'</div>';
     if(l.status==='PENDING'){
       html += '<div style="margin-top:1rem;display:flex;gap:0.5rem">';
-      html += '<button class="btn btn-success" onclick="approveListing(\'' + l.id + '\')">Approve</button>';
-      html += '<button class="btn btn-danger" onclick="rejectListing(\'' + l.id + '\')">Reject</button>';
+      html += '<button class="btn btn-success" onclick="approveListing(&#39;' + l.id + '&#39;)">Approve</button>';
+      html += '<button class="btn btn-danger" onclick="rejectListing(&#39;' + l.id + '&#39;)">Reject</button>';
       html += '</div>';
     }
     if(a.inputSchema){
