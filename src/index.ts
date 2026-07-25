@@ -40,6 +40,8 @@ const app = new Hono<Env>();
 
 app.onError((err, c) => handleError(err, c));
 
+app.get("/", (c) => c.redirect("/console"));
+
 app.route("/console", consoleRoute);
 
 const openapiSpec = JSON.parse(readFileSync(join(__dirname, "../project-docs/openapi.json"), "utf-8")) as Record<string, unknown>;
