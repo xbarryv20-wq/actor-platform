@@ -39,7 +39,7 @@ Outputs:
 - lint/typecheck/test commands known
 - env example created
 - logging/error strategy present
-- CI baseline present
+- CI baseline present (.github/workflows/ci.yml — lint, typecheck, test on push/PR)
 - docs initialized
 
 Exit criteria:

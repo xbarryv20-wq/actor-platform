@@ -1,6 +1,17 @@
 node_modules/
 dist/
+dist_test/
 coverage/
 .env
 *.log
 .DS_Store
+*.tsbuildinfo
+seed2.sql
+seed.sql
+check_token.sql
+console_check*.js
+check_*.cjs
+verify.cjs
+fix_*.cjs
+gen_token.cjs
+*.bak

@@ -1,0 +1,914 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Actor Platform API",
+    "version": "0.0.1",
+    "description": "API for managing actors, runs, schedules, storage, and webhooks on the actor automation platform."
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Local development" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["System"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service health status",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
+          }
+        }
+      }
+    },
+    "/console": {
+      "get": {
+        "summary": "Actor Console UI",
+        "tags": ["System"],
+        "security": [],
+        "responses": { "200": { "description": "HTML console page" } }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "summary": "OpenAPI specification",
+        "tags": ["System"],
+        "security": [],
+        "responses": { "200": { "description": "OpenAPI 3.1 spec" } }
+      }
+    },
+    "/docs": {
+      "get": {
+        "summary": "Swagger UI documentation",
+        "tags": ["System"],
+        "security": [],
+        "responses": { "200": { "description": "Swagger UI HTML page" } }
+      }
+    },
+    "/runs": {
+      "post": {
+        "summary": "Create a run",
+        "tags": ["Runs"],
+        "security": [{ "bearerAuth": ["runs:write"] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateRunInput" } } } },
+        "responses": {
+          "201": { "description": "Run created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ActorRun" } } } },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/runs/{id}": {
+      "get": {
+        "summary": "Get run by ID",
+        "tags": ["Runs"],
+        "security": [{ "bearerAuth": ["runs:read"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Run details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ActorRun" } } } } }
+      },
+      "patch": {
+        "summary": "Update run status",
+        "tags": ["Runs"],
+        "security": [{ "bearerAuth": ["runs:write"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateRunInput" } } } },
+        "responses": { "200": { "description": "Run updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ActorRun" } } } } }
+      }
+    },
+    "/runs/{id}/logs": {
+      "get": {
+        "summary": "Get run logs",
+        "tags": ["Runs"],
+        "security": [{ "bearerAuth": ["runs:read"] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated logs", "content": { "application/json": { "schema": { "type": "object", "properties": { "logs": { "type": "array", "items": { "$ref": "#/components/schemas/LogEntry" } }, "nextCursor": { "type": "string" } } } } } } }
+      }
+    },
+    "/runs/{id}/cancel": {
+      "post": {
+        "summary": "Cancel a run",
+        "tags": ["Runs"],
+        "security": [{ "bearerAuth": ["runs:write"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Run cancelled", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CancelRunResponse" } } } } }
+      }
+    },
+    "/schedules": {
+      "post": {
+        "summary": "Create a schedule",
+        "tags": ["Schedules"],
+        "security": [{ "bearerAuth": ["schedules:write"] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateScheduleInput" } } } },
+        "responses": { "201": { "description": "Schedule created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Schedule" } } } } }
+      }
+    },
+    "/schedules/{id}": {
+      "get": {
+        "summary": "Get schedule by ID",
+        "tags": ["Schedules"],
+        "security": [{ "bearerAuth": ["schedules:read"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Schedule details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Schedule" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/runs": {
+      "get": {
+        "summary": "List workspace runs",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["runs:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated runs list", "content": { "application/json": { "schema": { "type": "object", "properties": { "runs": { "type": "array", "items": { "$ref": "#/components/schemas/ActorRun" } }, "nextCursor": { "type": "string" } } } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/schedules": {
+      "get": {
+        "summary": "List workspace schedules",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["schedules:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated schedules list", "content": { "application/json": { "schema": { "type": "object", "properties": { "schedules": { "type": "array", "items": { "$ref": "#/components/schemas/Schedule" } }, "nextCursor": { "type": "string" } } } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}": {
+      "get": {
+        "summary": "Get workspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["workspace:read"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Workspace details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workspace" } } } } }
+      },
+      "patch": {
+        "summary": "Update workspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["workspace:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "slug": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Workspace updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workspace" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/members": {
+      "get": {
+        "summary": "List workspace members",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["workspace:read"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Member list", "content": { "application/json": { "schema": { "type": "object", "properties": { "members": { "type": "array", "items": { "$ref": "#/components/schemas/WorkspaceMember" } } } } } } } }
+      },
+      "post": {
+        "summary": "Add workspace member",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["workspace:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddMemberInput" } } } },
+        "responses": { "201": { "description": "Member added", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkspaceMember" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/members/{userId}": {
+      "patch": {
+        "summary": "Update member role",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["workspace:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateRoleInput" } } } },
+        "responses": { "200": { "description": "Role updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkspaceMember" } } } } }
+      },
+      "delete": {
+        "summary": "Remove workspace member",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": ["workspace:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Member removed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuccessResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/actors": {
+      "get": {
+        "summary": "List actors",
+        "tags": ["Actors"],
+        "security": [{ "bearerAuth": ["actors:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated actor list", "content": { "application/json": { "schema": { "type": "object", "properties": { "actors": { "type": "array", "items": { "$ref": "#/components/schemas/Actor" } }, "nextCursor": { "type": "string" } } } } } } }
+      },
+      "post": {
+        "summary": "Create an actor",
+        "tags": ["Actors"],
+        "security": [{ "bearerAuth": ["actors:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateActorInput" } } } },
+        "responses": { "201": { "description": "Actor created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Actor" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/actors/{actorId}": {
+      "get": {
+        "summary": "Get actor by ID",
+        "tags": ["Actors"],
+        "security": [{ "bearerAuth": ["actors:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "actorId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Actor details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Actor" } } } } }
+      },
+      "patch": {
+        "summary": "Update an actor",
+        "tags": ["Actors"],
+        "security": [{ "bearerAuth": ["actors:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "actorId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateActorInput" } } } },
+        "responses": { "200": { "description": "Actor updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Actor" } } } } }
+      },
+      "delete": {
+        "summary": "Delete an actor",
+        "tags": ["Actors"],
+        "security": [{ "bearerAuth": ["actors:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "actorId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Actor deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuccessResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/actors/{actorId}/versions": {
+      "get": {
+        "summary": "List actor versions",
+        "tags": ["Actors"],
+        "security": [{ "bearerAuth": ["actors:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "actorId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Version list", "content": { "application/json": { "schema": { "type": "object", "properties": { "versions": { "type": "array", "items": { "$ref": "#/components/schemas/ActorVersion" } } } } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/actors/{actorId}/transition": {
+      "post": {
+        "summary": "Transition actor lifecycle state",
+        "tags": ["Actors"],
+        "security": [{ "bearerAuth": ["actors:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "actorId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TransitionInput" } } } },
+        "responses": { "200": { "description": "Transition applied", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Actor" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/api-tokens": {
+      "get": {
+        "summary": "List API tokens",
+        "tags": ["API Tokens"],
+        "security": [{ "bearerAuth": ["tokens:read"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Token list", "content": { "application/json": { "schema": { "type": "object", "properties": { "tokens": { "type": "array", "items": { "$ref": "#/components/schemas/ApiToken" } } } } } } } }
+      },
+      "post": {
+        "summary": "Create an API token",
+        "tags": ["API Tokens"],
+        "security": [{ "bearerAuth": ["tokens:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTokenInput" } } } },
+        "responses": { "201": { "description": "Token created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTokenResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/api-tokens/{tokenId}/revoke": {
+      "post": {
+        "summary": "Revoke an API token",
+        "tags": ["API Tokens"],
+        "security": [{ "bearerAuth": ["tokens:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "tokenId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Token revoked", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuccessResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/datasets": {
+      "get": {
+        "summary": "List datasets",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated dataset list", "content": { "application/json": { "schema": { "type": "object", "properties": { "datasets": { "type": "array", "items": { "$ref": "#/components/schemas/Dataset" } }, "nextCursor": { "type": "string" } } } } } } }
+      },
+      "post": {
+        "summary": "Create a dataset",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateStorageInput" } } } },
+        "responses": { "201": { "description": "Dataset created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Dataset" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/datasets/{datasetId}": {
+      "get": {
+        "summary": "Get dataset by ID",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "datasetId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Dataset with item count", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DatasetWithCount" } } } } }
+      },
+      "delete": {
+        "summary": "Delete a dataset",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "datasetId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Dataset deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuccessResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/datasets/{datasetId}/items": {
+      "get": {
+        "summary": "List dataset items",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "datasetId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated items", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/DatasetItem" } }, "nextCursor": { "type": "string" } } } } } } }
+      },
+      "post": {
+        "summary": "Add item to dataset",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "datasetId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddItemInput" } } } },
+        "responses": { "201": { "description": "Item added", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DatasetItem" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/kv-stores": {
+      "get": {
+        "summary": "List KV stores",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated KV store list", "content": { "application/json": { "schema": { "type": "object", "properties": { "keyValueStores": { "type": "array", "items": { "$ref": "#/components/schemas/KeyValueStore" } }, "nextCursor": { "type": "string" } } } } } } }
+      },
+      "post": {
+        "summary": "Create a KV store",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateStorageInput" } } } },
+        "responses": { "201": { "description": "KV store created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KeyValueStore" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/kv-stores/{storeId}": {
+      "get": {
+        "summary": "Get KV store by ID",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "storeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "KV store with record count", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KeyValueStoreWithCount" } } } } }
+      },
+      "delete": {
+        "summary": "Delete a KV store",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "storeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "KV store deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuccessResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/kv-stores/{storeId}/records": {
+      "get": {
+        "summary": "List KV store records",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "storeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated records", "content": { "application/json": { "schema": { "type": "object", "properties": { "records": { "type": "array", "items": { "$ref": "#/components/schemas/KeyValueRecord" } }, "nextCursor": { "type": "string" } } } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/request-queues": {
+      "get": {
+        "summary": "List request queues",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated queue list", "content": { "application/json": { "schema": { "type": "object", "properties": { "requestQueues": { "type": "array", "items": { "$ref": "#/components/schemas/RequestQueue" } }, "nextCursor": { "type": "string" } } } } } } }
+      },
+      "post": {
+        "summary": "Create a request queue",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateStorageInput" } } } },
+        "responses": { "201": { "description": "Queue created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RequestQueue" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/request-queues/{queueId}": {
+      "get": {
+        "summary": "Get request queue by ID",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "queueId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Queue with item count", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RequestQueueWithCount" } } } } }
+      },
+      "delete": {
+        "summary": "Delete a request queue",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "queueId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Queue deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuccessResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/request-queues/{queueId}/items": {
+      "get": {
+        "summary": "List request queue items",
+        "tags": ["Storage"],
+        "security": [{ "bearerAuth": ["storage:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "queueId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated queue items", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/RequestQueueItem" } }, "nextCursor": { "type": "string" } } } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/webhooks": {
+      "get": {
+        "summary": "List webhooks",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": ["webhooks:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated webhook list", "content": { "application/json": { "schema": { "type": "object", "properties": { "webhooks": { "type": "array", "items": { "$ref": "#/components/schemas/Webhook" } }, "nextCursor": { "type": "string" } } } } } } }
+      },
+      "post": {
+        "summary": "Create a webhook",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": ["webhooks:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateWebhookInput" } } } },
+        "responses": { "201": { "description": "Webhook created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Webhook" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/webhooks/{webhookId}": {
+      "get": {
+        "summary": "Get webhook by ID",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": ["webhooks:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "webhookId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Webhook details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Webhook" } } } } }
+      },
+      "patch": {
+        "summary": "Update a webhook",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": ["webhooks:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "webhookId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateWebhookInput" } } } },
+        "responses": { "200": { "description": "Webhook updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Webhook" } } } } }
+      },
+      "delete": {
+        "summary": "Delete a webhook",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": ["webhooks:write"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "webhookId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Webhook deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuccessResponse" } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/webhooks/{webhookId}/attempts": {
+      "get": {
+        "summary": "List webhook delivery attempts",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": ["webhooks:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "webhookId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated attempt list", "content": { "application/json": { "schema": { "type": "object", "properties": { "attempts": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookAttempt" } }, "nextCursor": { "type": "string" } } } } } } }
+      }
+    },
+    "/workspaces/{workspaceId}/events": {
+      "get": {
+        "summary": "List platform events",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": ["runs:read"] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } },
+          { "name": "types", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated event types to filter" }
+        ],
+        "responses": { "200": { "description": "Paginated event list", "content": { "application/json": { "schema": { "type": "object", "properties": { "events": { "type": "array", "items": { "$ref": "#/components/schemas/PlatformEvent" } }, "nextCursor": { "type": "string" } } } } } } }
+      }
+    },
+    "/marketplace": {
+      "get": {
+        "summary": "Browse marketplace listings",
+        "tags": ["Marketplace"],
+        "security": [],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated marketplace listings" } }
+      }
+    },
+    "/marketplace/{marketplaceId}": {
+      "get": {
+        "summary": "Get marketplace listing detail",
+        "tags": ["Marketplace"],
+        "security": [],
+        "parameters": [{ "name": "marketplaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Listing detail with actor info" }, "404": { "description": "Listing not found" } }
+      }
+    },
+    "/marketplace/{marketplaceId}/unpublish": {
+      "post": {
+        "summary": "Unpublish a marketplace listing",
+        "tags": ["Marketplace"],
+        "security": [{ "bearerAuth": ["actors:write"] }],
+        "parameters": [{ "name": "marketplaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Listing unpublished" } }
+      }
+    },
+    "/workspaces/{workspaceId}/marketplace": {
+      "post": {
+        "summary": "Publish an actor to marketplace",
+        "tags": ["Marketplace"],
+        "security": [{ "bearerAuth": ["actors:write"] }],
+        "parameters": [{ "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "actorId": { "type": "string" }, "category": { "type": "string" } }, "required": ["actorId"] } } } },
+        "responses": { "201": { "description": "Listing created" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "SHA-256 hashed API token"
+      }
+    },
+    "schemas": {
+      "Error": { "type": "object", "properties": { "error": { "type": "string" }, "details": {} }, "required": ["error"] },
+      "SuccessResponse": { "type": "object", "properties": { "success": { "type": "boolean" } }, "required": ["success"] },
+      "CancelRunResponse": { "type": "object", "properties": { "id": { "type": "string" }, "status": { "type": "string", "enum": ["CANCELED"] } }, "required": ["id", "status"] },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" }, "service": { "type": "string" }, "version": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "db": { "type": "object", "properties": { "status": { "type": "string" }, "error": { "type": "string" } }, "required": ["status"] }
+        }
+      },
+      "Actor": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "workspaceId": { "type": "string" }, "ownerId": { "type": "string" },
+          "name": { "type": "string" }, "slug": { "type": "string" }, "description": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } }, "icon": { "type": "string" },
+          "status": { "type": "string", "enum": ["DRAFT", "PUBLISHED", "DEPRECATED"] },
+          "inputSchema": {}, "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ActorVersion": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "actorId": { "type": "string" }, "version": { "type": "integer" },
+          "inputSchema": {}, "sourceReference": { "type": "string" }, "changelog": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ActorRun": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "actorId": { "type": "string" }, "actorVersionId": { "type": "string" },
+          "workspaceId": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED"] },
+          "input": {}, "output": {}, "errorMessage": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "startedAt": { "type": "string", "format": "date-time" },
+          "finishedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LogEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "runId": { "type": "string" }, "level": { "type": "string" },
+          "message": { "type": "string" }, "metadata": {}, "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Schedule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "workspaceId": { "type": "string" }, "actorId": { "type": "string" },
+          "actorVersionId": { "type": "string" }, "cronExpression": { "type": "string" },
+          "inputOverride": {}, "enabled": { "type": "boolean" },
+          "nextRunAt": { "type": "string", "format": "date-time" }, "lastRunAt": { "type": "string", "format": "date-time" },
+          "errorMessage": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Workspace": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "name": { "type": "string" }, "slug": { "type": "string" },
+          "organizationId": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WorkspaceMember": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "userId": { "type": "string" }, "role": { "type": "string", "enum": ["OWNER", "ADMIN", "MEMBER"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "user": { "type": "object", "properties": { "id": { "type": "string" }, "email": { "type": "string" }, "name": { "type": "string" } } }
+        }
+      },
+      "ApiToken": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "label": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "lastUsedAt": { "type": "string", "format": "date-time" },
+          "revokedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Dataset": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "workspaceId": { "type": "string" }, "actorRunId": { "type": "string" },
+          "ownerId": { "type": "string" }, "name": { "type": "string" }, "slug": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DatasetWithCount": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Dataset" },
+          { "type": "object", "properties": { "_count": { "type": "object", "properties": { "items": { "type": "integer" } } } } }
+        ]
+      },
+      "DatasetItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "datasetId": { "type": "string" }, "sequence": { "type": "integer" },
+          "payload": {}, "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "KeyValueStore": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "workspaceId": { "type": "string" }, "actorRunId": { "type": "string" },
+          "ownerId": { "type": "string" }, "name": { "type": "string" }, "slug": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "KeyValueStoreWithCount": {
+        "allOf": [
+          { "$ref": "#/components/schemas/KeyValueStore" },
+          { "type": "object", "properties": { "_count": { "type": "object", "properties": { "records": { "type": "integer" } } } } }
+        ]
+      },
+      "KeyValueRecord": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "storeId": { "type": "string" }, "key": { "type": "string" },
+          "value": {}, "contentType": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RequestQueue": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "workspaceId": { "type": "string" }, "actorRunId": { "type": "string" },
+          "ownerId": { "type": "string" }, "name": { "type": "string" }, "slug": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RequestQueueWithCount": {
+        "allOf": [
+          { "$ref": "#/components/schemas/RequestQueue" },
+          { "type": "object", "properties": { "_count": { "type": "object", "properties": { "items": { "type": "integer" } } } } }
+        ]
+      },
+      "RequestQueueItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "queueId": { "type": "string" }, "uniqueKey": { "type": "string" },
+          "url": { "type": "string" }, "payload": {}, "status": { "type": "string" },
+          "retryCount": { "type": "integer" }, "handledAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Webhook": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "workspaceId": { "type": "string" }, "actorId": { "type": "string" },
+          "ownerId": { "type": "string" }, "eventTypes": { "type": "string" }, "url": { "type": "string", "format": "uri" },
+          "secret": { "type": "string" }, "enabled": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }, "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WebhookAttempt": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "webhookId": { "type": "string" }, "eventType": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "DELIVERING", "RETRYING", "SUCCEEDED", "FAILED"] },
+          "attemptCount": { "type": "integer" }, "requestUrl": { "type": "string" },
+          "requestBody": { "type": "string" }, "responseStatusCode": { "type": "integer" },
+          "responseBody": { "type": "string" }, "errorMessage": { "type": "string" },
+          "nextRetryAt": { "type": "string", "format": "date-time" },
+          "lastRetryAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }, "completedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PlatformEvent": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "workspaceId": { "type": "string" },
+          "actorId": { "type": "string" }, "actorVersionId": { "type": "string" },
+          "runId": { "type": "string" }, "scheduleId": { "type": "string" },
+          "type": { "type": "string", "enum": ["RUN_CREATED", "RUN_SUCCEEDED", "RUN_FAILED", "RUN_CANCELED", "SCHEDULE_DISPATCHED", "ACTOR_PUBLISHED"] },
+          "message": { "type": "string" }, "payload": {},
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateRunInput": {
+        "type": "object",
+        "required": ["actorId", "workspaceId"],
+        "properties": {
+          "actorId": { "type": "string" }, "workspaceId": { "type": "string" },
+          "actorVersionId": { "type": "string" }, "input": { "type": "object" }
+        }
+      },
+      "UpdateRunInput": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "enum": ["PENDING", "RUNNING", "SUCCEEDED", "FAILED"] },
+          "output": { "type": "object" }, "errorMessage": { "type": "string" }
+        }
+      },
+      "CreateScheduleInput": {
+        "type": "object",
+        "required": ["workspaceId", "actorId", "cron"],
+        "properties": {
+          "workspaceId": { "type": "string" }, "actorId": { "type": "string" },
+          "actorVersionId": { "type": "string" }, "cron": { "type": "string" },
+          "input": { "type": "object" }, "enabled": { "type": "boolean" }
+        }
+      },
+      "CreateActorInput": {
+        "type": "object",
+        "required": ["name", "slug"],
+        "properties": {
+          "name": { "type": "string" }, "slug": { "type": "string" },
+          "description": { "type": "string" }, "tags": { "type": "array", "items": { "type": "string" } },
+          "icon": { "type": "string" }, "inputSchema": { "type": "object" }
+        }
+      },
+      "UpdateActorInput": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }, "slug": { "type": "string" },
+          "description": { "type": "string" }, "tags": { "type": "array", "items": { "type": "string" } },
+          "icon": { "type": "string" }, "inputSchema": { "type": "object" }
+        }
+      },
+      "TransitionInput": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": { "type": "string", "enum": ["publish", "deprecate", "republish"] },
+          "changelog": { "type": "string" }
+        }
+      },
+      "AddMemberInput": {
+        "type": "object",
+        "required": ["userId", "role"],
+        "properties": {
+          "userId": { "type": "string" },
+          "role": { "type": "string", "enum": ["OWNER", "ADMIN", "MEMBER"] }
+        }
+      },
+      "UpdateRoleInput": {
+        "type": "object",
+        "required": ["role"],
+        "properties": { "role": { "type": "string", "enum": ["OWNER", "ADMIN", "MEMBER"] } }
+      },
+      "CreateTokenInput": {
+        "type": "object",
+        "required": ["label", "userId"],
+        "properties": {
+          "label": { "type": "string" }, "userId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "CreateTokenResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }, "label": { "type": "string" }, "scopes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }, "token": { "type": "string" }
+        }
+      },
+      "CreateStorageInput": {
+        "type": "object",
+        "required": ["name", "slug"],
+        "properties": { "name": { "type": "string" }, "slug": { "type": "string" } }
+      },
+      "AddItemInput": {
+        "type": "object",
+        "required": ["payload"],
+        "properties": {
+          "payload": { "type": "object" },
+          "sequence": { "type": "integer" }
+        }
+      },
+      "CreateWebhookInput": {
+        "type": "object",
+        "required": ["actorId", "eventTypes", "url"],
+        "properties": {
+          "actorId": { "type": "string" }, "eventTypes": { "type": "string" },
+          "url": { "type": "string", "format": "uri" }, "secret": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "UpdateWebhookInput": {
+        "type": "object",
+        "properties": {
+          "eventTypes": { "type": "string" }, "url": { "type": "string", "format": "uri" },
+          "secret": { "type": "string" }, "enabled": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

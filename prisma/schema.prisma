@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
 }
 
 enum MembershipRole {
@@ -20,7 +21,15 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships Membership[]
+  memberships          Membership[]
+  apiTokens            ApiToken[]
+  workspaceMemberships WorkspaceMembership[]
+  ownedActors          Actor[]
+  ownedDatasets        Dataset[]
+  ownedKvStores        KeyValueStore[]
+  ownedRequestQueues   RequestQueue[]
+  ownedWebhooks        Webhook[]
+  marketplaceListings  MarketplaceListing[]
 }
 
 model Organization {
@@ -47,6 +56,12 @@ model Membership {
   @@unique([userId, organizationId])
 }
 
+enum ActorStatus {
+  DRAFT
+  PUBLISHED
+  DEPRECATED
+}
+
 enum ActorRunStatus {
   PENDING
   RUNNING
@@ -63,64 +78,110 @@ model Workspace {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  actors        Actor[]
-  runs          ActorRun[]
-  datasets      Dataset[]
-  kvStores      KeyValueStore[]
-  requestQueues RequestQueue[]
+  organization         Organization          @relation(fields: [organizationId], references: [id])
+  actors               Actor[]
+  runs                 ActorRun[]
+  datasets             Dataset[]
+  kvStores             KeyValueStore[]
+  requestQueues        RequestQueue[]
+  schedules            Schedule[]
+  workspaceMemberships WorkspaceMembership[]
+  webhooks             Webhook[]
 
   @@unique([organizationId, slug])
 }
 
-model Actor {
+model WorkspaceMembership {
   id          String   @id @default(cuid())
+  userId      String
   workspaceId String
+  role        String   @default("MEMBER")
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+model Actor {
+  id          String      @id @default(cuid())
+  workspaceId String
+  ownerId     String?
   name        String
   slug        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String?
+  tags        String[]
+  icon        String?
+  status      ActorStatus @default(DRAFT)
+  inputSchema Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   workspace Workspace      @relation(fields: [workspaceId], references: [id])
+  owner     User?          @relation(fields: [ownerId], references: [id])
   versions  ActorVersion[]
   runs      ActorRun[]
+  schedules Schedule[]
+  webhooks  Webhook[]
+  listings  MarketplaceListing[]
 
   @@unique([workspaceId, slug])
+  @@index([ownerId])
 }
 
 model ActorVersion {
   id              String   @id @default(cuid())
   actorId         String
   version         Int
+  inputSchema     Json?
   sourceReference String?
   changelog       String?
   createdAt       DateTime @default(now())
 
-  actor Actor      @relation(fields: [actorId], references: [id])
-  runs  ActorRun[]
+  actor     Actor      @relation(fields: [actorId], references: [id])
+  runs      ActorRun[]
+  schedules Schedule[]
 
   @@unique([actorId, version])
 }
 
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  label      String
+  scopes     String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
 model ActorRun {
-  id             String          @id @default(cuid())
+  id             String         @id @default(cuid())
   actorId        String
   actorVersionId String?
   workspaceId    String
-  status         ActorRunStatus  @default(PENDING)
+  status         ActorRunStatus @default(PENDING)
   input          Json?
   output         Json?
   errorMessage   String?
-  createdAt      DateTime        @default(now())
+  createdAt      DateTime       @default(now())
   startedAt      DateTime?
   finishedAt     DateTime?
 
-  actor        Actor         @relation(fields: [actorId], references: [id])
-  actorVersion ActorVersion? @relation(fields: [actorVersionId], references: [id])
-  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
-  datasets     Dataset[]
-  kvStores     KeyValueStore[]
+  actor         Actor           @relation(fields: [actorId], references: [id])
+  actorVersion  ActorVersion?   @relation(fields: [actorVersionId], references: [id])
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id])
+  datasets      Dataset[]
+  kvStores      KeyValueStore[]
   requestQueues RequestQueue[]
+  logs          LogEntry[]
 
   @@index([workspaceId])
   @@index([actorId])
@@ -131,17 +192,20 @@ model Dataset {
   id          String   @id @default(cuid())
   workspaceId String
   actorRunId  String?
+  ownerId     String?
   name        String
   slug        String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace    @relation(fields: [workspaceId], references: [id])
-  actorRun  ActorRun?    @relation(fields: [actorRunId], references: [id])
+  workspace Workspace     @relation(fields: [workspaceId], references: [id])
+  actorRun  ActorRun?     @relation(fields: [actorRunId], references: [id])
+  owner     User?         @relation(fields: [ownerId], references: [id])
   items     DatasetItem[]
 
   @@unique([workspaceId, slug])
   @@index([actorRunId])
+  @@index([ownerId])
 }
 
 model DatasetItem {
@@ -160,17 +224,20 @@ model KeyValueStore {
   id          String   @id @default(cuid())
   workspaceId String
   actorRunId  String?
+  ownerId     String?
   name        String
   slug        String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace       @relation(fields: [workspaceId], references: [id])
-  actorRun  ActorRun?       @relation(fields: [actorRunId], references: [id])
+  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  actorRun  ActorRun?        @relation(fields: [actorRunId], references: [id])
+  owner     User?            @relation(fields: [ownerId], references: [id])
   records   KeyValueRecord[]
 
   @@unique([workspaceId, slug])
   @@index([actorRunId])
+  @@index([ownerId])
 }
 
 model KeyValueRecord {
@@ -191,17 +258,141 @@ model RequestQueue {
   id          String   @id @default(cuid())
   workspaceId String
   actorRunId  String?
+  ownerId     String?
   name        String
   slug        String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace        @relation(fields: [workspaceId], references: [id])
-  actorRun  ActorRun?        @relation(fields: [actorRunId], references: [id])
+  workspace Workspace          @relation(fields: [workspaceId], references: [id])
+  actorRun  ActorRun?          @relation(fields: [actorRunId], references: [id])
+  owner     User?              @relation(fields: [ownerId], references: [id])
   items     RequestQueueItem[]
 
   @@unique([workspaceId, slug])
   @@index([actorRunId])
+  @@index([ownerId])
+}
+
+model Schedule {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  actorId        String
+  actorVersionId String?
+  cronExpression String
+  inputOverride  Json?
+  enabled        Boolean   @default(true)
+  nextRunAt      DateTime?
+  lastRunAt      DateTime?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  actor        Actor         @relation(fields: [actorId], references: [id])
+  actorVersion ActorVersion? @relation(fields: [actorVersionId], references: [id])
+
+  @@index([workspaceId])
+  @@index([enabled, nextRunAt])
+}
+
+model Webhook {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorId     String
+  ownerId     String?
+  eventTypes  String
+  url         String
+  secret      String?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  actor     Actor            @relation(fields: [actorId], references: [id])
+  owner     User?            @relation(fields: [ownerId], references: [id])
+  attempts  WebhookAttempt[]
+
+  @@index([workspaceId])
+  @@index([actorId])
+  @@index([ownerId])
+}
+
+enum WebhookAttemptStatus {
+  PENDING
+  DELIVERING
+  RETRYING
+  SUCCEEDED
+  FAILED
+}
+
+model WebhookAttempt {
+  id                 String                @id @default(cuid())
+  webhookId          String
+  eventType          String
+  status             WebhookAttemptStatus  @default(PENDING)
+  attemptCount       Int                   @default(1)
+  requestUrl         String
+  requestBody        String?
+  responseStatusCode  Int?
+  responseBody       String?
+  errorMessage       String?
+  nextRetryAt        DateTime?
+  lastRetryAt        DateTime?
+  createdAt          DateTime              @default(now())
+  completedAt        DateTime?
+
+  webhook Webhook @relation(fields: [webhookId], references: [id])
+
+  @@index([webhookId])
+  @@index([status])
+  @@index([nextRetryAt])
+  @@index([createdAt])
+}
+
+model LogEntry {
+  id        String   @id @default(cuid())
+  runId     String
+  level     String   @default("INFO")
+  message   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  run ActorRun @relation(fields: [runId], references: [id])
+
+  @@index([runId])
+  @@index([runId, level])
+}
+
+enum EventType {
+  RUN_CREATED
+  RUN_SUCCEEDED
+  RUN_FAILED
+  RUN_CANCELED
+  SCHEDULE_DISPATCHED
+  ACTOR_PUBLISHED
+  MARKETPLACE_LISTED
+  MARKETPLACE_APPROVED
+  MARKETPLACE_REJECTED
+  MARKETPLACE_UNPUBLISHED
+}
+
+model PlatformEvent {
+  id          String    @id @default(cuid())
+  workspaceId String
+  actorId     String?
+  actorVersionId String?
+  runId       String?
+  scheduleId  String?
+  type        EventType
+  message     String?
+  payload     Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([type, createdAt])
+  @@index([runId])
+  @@index([actorId])
 }
 
 model RequestQueueItem {
@@ -219,4 +410,78 @@ model RequestQueueItem {
 
   @@unique([queueId, uniqueKey])
   @@index([queueId, status])
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNPUBLISHED
+}
+
+model MarketplaceListing {
+  id          String        @id @default(cuid())
+  actorId     String
+  publisherId String
+  versionId   String?
+  status      ListingStatus @default(PENDING)
+  category    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  actor     Actor      @relation(fields: [actorId], references: [id])
+  publisher User       @relation(fields: [publisherId], references: [id])
+
+  @@unique([actorId])
+  @@index([status, createdAt])
+  @@index([publisherId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  priceCents  Int      @default(0)
+  runLimit    Int      @default(100)
+  storageMb   Int      @default(100)
+  interval    String   @default("monthly")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  workspaceId        String
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  createdAt          DateTime           @default(now())
+  canceledAt         DateTime?
+
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status, currentPeriodEnd])
+}
+
+model UsageRecord {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  periodStart  DateTime
+  periodEnd    DateTime
+  runsUsed     Int      @default(0)
+  storageBytes Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@unique([workspaceId, periodStart])
+  @@index([workspaceId, periodEnd])
 }

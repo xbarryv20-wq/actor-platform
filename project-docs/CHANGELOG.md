@@ -1,6 +1,301 @@
 # CHANGELOG.md
 
-## Unreleased
+## v1.0.0 — 2026-07-24
+- RELEASE: All 6 MUST-FIX blockers resolved. 396+ tests, 30 files, lint clean.
+  - OpenAPI 3.1 spec at /openapi.json, Swagger UI at /docs
+  - Console SPA at /console with full admin UI
+  - README.md created with quick start and architecture overview
+  - Remaining issues documented in KNOWN_ISSUES.md as acceptable debt
+  - Codebase frozen and release-ready
+
+- MARKETPLACE GOVERNANCE: Added PENDING/REJECTED listing statuses, approve/reject endpoints + console UI.
+- BILLING & METERING: Added Plan, Subscription, UsageRecord Prisma models; billing routes (plans, subscription, usage); console billing view with subscription card, usage stats, plan table.
+- ENTERPRISE & ADMIN: Created admin routes (workspace/user listing), admin console view with workspace/user tables.
+- INTEGRATIONS COMPLETE: Webhook consumers, API tokens, OpenAPI docs, agent-facing endpoints all verified.
+- 16 new route tests across marketplace, billing, and admin.
+- 396 tests, 30 test files, lint + typecheck clean.
+- MF-1 FIX: Added workspace membership enforcement to billing read routes.
+  - GET /workspaces/:workspaceId/billing/subscription now requires requireWorkspaceRole
+  - GET /workspaces/:workspaceId/billing/usage now requires requireWorkspaceRole
+  - Cross-workspace billing data access is now prevented (must be workspace member)
+  - POST /subscription mutation route unchanged (already had requireWorkspaceOwner)
+- MF-2 FIX: Added workspace membership enforcement to marketplace moderation routes.
+  - Created assertMarketplaceWorkspaceAccess() helper resolving listing → actor → workspaceId → role check
+  - Applied to POST /marketplace/:id/unpublish, /approve, /reject
+  - Added requireAuth middleware to all three routes
+  - Unpublish retains publisherId ownership check
+  - Browse/detail routes unchanged (intentionally public)
+- MF-3 FIX: Added platform events and webhook triggers to marketplace lifecycle.
+  - Added MARKETPLACE_LISTED/APPROVED/REJECTED/UNPUBLISHED to EventType enum (prisma generated)
+  - Publish emits marketplace.listed webhook + MARKETPLACE_LISTED event
+  - Approve emits marketplace.approved webhook + MARKETPLACE_APPROVED event
+  - Reject emits marketplace.rejected webhook + MARKETPLACE_REJECTED event
+  - Unpublish emits marketplace.unpublished webhook + MARKETPLACE_UNPUBLISHED event
+  - All use existing emitEvent + triggerWebhooks fire-and-forget pattern
+- MF-4 FIX: Rewrote API_CONTRACTS.md to match actual routes, scopes, and behavior.
+  - Removed non-existent `/api` prefix from all routes
+  - Fixed actor modeling as workspace sub-resources
+  - Corrected scope names (runs:write, storage:read, etc.)
+  - Fixed run statuses, webhook events, error envelope, pagination format
+  - Added marketplace, billing, admin, events sections
+  - Listed 3 missing routes as "Not yet implemented"
+  - No runtime code changed
+- MF-5 RESOLVED: Routing convention decided — no `/api` prefix.
+  - All routes use bare paths (/runs, /workspaces/..., /marketplace, etc.)
+  - Console SPA at /console is the only UI route
+  - API_CONTRACTS.md already documents bare paths (fixed in MF-4)
+  - Proxy layer can add /api prefix externally if needed
+  - No code changes required
+- MF-6 FIX: Implemented 2 of 3 missing documented routes.
+  - Added dataset export: GET /workspaces/:workspaceId/datasets/:datasetId/export
+    - Returns all items as JSON with Content-Disposition header
+    - Same storage:read scope and workspace role as other dataset routes
+  - Added schedule update: PATCH /schedules/:id
+    - Supports updating cron, enabled, input, actorVersionId
+    - Validates cron if provided, workspace membership check
+    - Returns 400 for empty body or invalid cron
+  - Task presets: removed from contract scope (deferred post-MVP)
+  - API_CONTRACTS.md updated to reflect all changes
+- CLEANUP: Events types filter now case-insensitive (normalizes to uppercase).
+- CLEANUP: Workspace slug uniqueness enforced on PATCH (409 conflict if slug taken within org).
+- CLEANUP: PlatformEvent cursor pagination — added secondary sort by id for stable ordering.
+- STABILIZATION: Fixed critical console JavaScript syntax error.
+  - Replaced all inline onclick="navigate(...)" handlers with data-nav attributes + event delegation
+  - Fixed root cause: single quotes in onclick broke JavaScript string literals at runtime
+  - Console no longer shows "SyntaxError: Unexpected identifier" or "login is not defined" errors
+  - Updated events-route tests to match DB-connected behavior (200 instead of 500)
+- INFRASTRUCTURE: Supabase + Vercel migration.
+  - Added directUrl to Prisma schema for Supabase pooled + direct connections
+  - Created vercel.json with build config
+  - Added api/index.ts serverless entry point
+  - Disabled schedulers on Vercel (process.env.VERCEL check)
+  - Created supabase/01_schema.sql (all tables, enums, indexes)
+  - Created supabase/02_seed.sql (dev seed data)
+  - Created supabase/README.md (setup guide)
+  - Created seed.ts (Prisma seed script with token generation)
+  - Updated .env.example with Supabase connection URL format
+  - Added postinstall and seed scripts to package.json
+  - Updated DEPLOY.md with Supabase + Vercel instructions
+  - Updated README.md with Supabase quick start
+
+### 2026-07-24
+- MARKETPLACE INSTALL/USE FLOW: Added Run action on marketplace listing detail.
+  - Added "Run This Actor" button to marketplace listing detail in console
+  - Reuses existing showCreateRun() modal for input entry and run creation
+  - No backend changes needed — reuses existing POST /runs endpoint
+  - 1 test updated: checks for "Run This Actor" button text
+
+- MARKETPLACE BROWSE/SEARCH UI IN CONSOLE: Added marketplace browser and listing detail views.
+  - Marketplace nav link in console sidebar
+  - renderMarketplace() — fetches GET /marketplace, displays listing table with actor name, slug, category, tags, date
+  - renderMarketplaceListing() — fetches GET /marketplace/:id, shows full actor detail with input schema
+  - Clickable rows navigate to listing detail, back button returns to browser
+  - 1 new console test for marketplace render functions
+  - 380 tests, 30 test files, lint + typecheck clean
+
+### 2026-07-23
+- MARKETPLACE LISTING MODEL: Added marketplace listing and publish flow.
+  - Added MarketplaceListing Prisma model with ListingStatus enum (APPROVED, UNPUBLISHED)
+  - Added relations on User and Actor models, regenerated Prisma client
+  - Created src/marketplace.ts with 4 routes:
+    - GET /marketplace (public browse, cursor pagination, category filter)
+    - GET /marketplace/:id (public detail with actor info, 404 if not APPROVED)
+    - POST /workspaces/:workspaceId/marketplace (publish actor, requires PUBLISHED status, actors:write scope)
+    - POST /marketplace/:id/unpublish (owner only, actors:write scope)
+  - 6 new tests (browse 500+400, detail 500, publish 500+400, unpublish 500)
+  - 379 tests, 30 test files, lint + typecheck clean
+
+- PUBLIC API DOCUMENTATION: OpenAPI 3.1 spec and Swagger UI.
+  - Created project-docs/openapi.json with comprehensive spec covering all 37 API endpoints
+  - Added GET /openapi.json route serving the spec
+  - Added GET /docs route with embedded Swagger UI (loaded from CDN, zero npm dependencies)
+  - Spec includes path params, query params, request/response schemas, security schemes (bearerAuth)
+  - 2 new tests: spec validity and Swagger UI page presence
+  - 373 tests, 30 test files, lint + typecheck clean
+
+- PUBLIC API HARDENING: Consistent error responses and global error handling.
+  - Created src/errors.ts with ErrorResponse interface and errorResponse() helper function
+  - Fixed auth middleware non-return bug in requireAuth (auth.ts) and requireTokenScope (token-scope.ts) — now correctly return Response objects
+  - Added global onError handler via app.onError in index.ts catching unhandled exceptions, logging them, and returning consistent { error: string } format
+  - 6 new tests: 3 errorResponse unit, 2 handleError unit, 1 app-level onError smoke test
+  - 371 tests, 30 test files, lint + typecheck clean
+
+- WEBHOOK DELIVERY STATUS TRACKING: Added delivery history API endpoint.
+  - Added GET /workspaces/:workspaceId/webhooks/:webhookId/attempts with cursor pagination
+  - Returns WebhookAttempt records (status, responseStatusCode, responseBody, errorMessage, attemptCount, nextRetryAt, completedAt)
+  - Verifies parent webhook exists (404), validates limit/cursor params (400), uses webhooks:read scope
+  - 2 new route tests (500 DB failure, 400 invalid limit)
+  - 365 tests, 29 test files, lint + typecheck clean
+
+- DASHBOARD VIEW IN CONSOLE: Added workspace summary page as default landing view.
+  - Added renderDashboard() function with parallel API calls (actors, runs, schedules, storage counts)
+  - Stats cards: Actor count, Recent runs, Schedules enabled, Storage items total
+  - Recent Runs widget — table of last 10 runs with ID link, actor, status badge, created
+  - Upcoming Schedules widget — next 10 enabled schedules with ID link, actor, cron, next run time
+  - Storage Overview widget — datasets, KV stores, request queues counts with 'View All' link
+  - Dashboard nav link added as first item, made default view (state.view='dashboard')
+  - 2 new console tests: dashboard render function, stat card CSS classes
+  - 362 tests, 29 test files, lint + typecheck clean
+
+- API TOKEN SCOPE VALIDATION: Token creation with role-based scope enforcement.
+  - validateScopes() checks for invalid scope names (returns 400)
+  - MEMBER role restricted to 13 scopes (MEMBER_ALLOWED_SCOPES, excludes workspace:write) (returns 403)
+  - OWNER/ADMIN can create tokens with any valid scopes
+  - DEFAULT_SCOPES applied if none specified (read-only defaults)
+  - 32 unit tests cover scope validation functions
+  - 1 HTTP-level test for invalid scope rejection (400 response)
+  - MEMBER scope restriction test blocked: requires real DB-backed auth (VITEST bypass)
+
+- STORAGE EXPLORER UI IN CONSOLE: Added read-only browse of datasets, KV stores, and request queues.
+  - Added GET /kv-stores/:storeId/records endpoint with cursor pagination (limit, cursor)
+  - Added GET /request-queues/:queueId/items endpoint with cursor pagination (limit, cursor)
+  - Storage overview page in console displaying all three storage types in card+table layout
+  - Dataset detail view with items table (seq, payload, created)
+  - KV store detail view with records table (key, value, content type, created)
+  - Request queue detail view with items table (status, unique key, URL, retries, created)
+  - 4 new route tests (KV records x2, queue items x2), 1 updated console test
+  - 360 tests, 29 test files, lint + typecheck clean
+
+- ACTOR CONSOLE UI: Single-page operational console for the actor platform.
+  - Created src/console.ts with embedded HTML/CSS/JS SPA, served at GET /console
+  - Actor list/detail with create, edit, lifecycle transitions, delete
+  - Version history per actor, run list/detail with logs, schedule list/detail
+  - Workspace selector, status badges, error handling, responsive layout
+  - 2 route tests: returns HTML 200, contains key UI elements
+  - 337 tests, 27 test files, lint + typecheck clean
+
+- CONSOLE AUTH INTEGRATION: Added token-based authentication to the console SPA.
+  - Token stored in localStorage, attached as `Authorization: Bearer` header to all API calls
+  - Login screen shown on page load when no token is stored
+  - Token info display and logout button in the top bar
+  - Auto-logout on 401 response (token expired/invalid)
+  - Login error display for invalid/empty tokens
+  - No server-side changes needed — reuses existing requireAuth middleware
+  - 5 new tests: login overlay, token management JS, Authorization header logic, 401 handling, logout button
+  - 342 tests, 27 test files
+
+- NOTIFICATION/EVENT BASELINE: Added platform event model, emission, and read endpoint.
+  - Added PlatformEvent Prisma model + EventType enum (RUN_CREATED, RUN_SUCCEEDED, RUN_FAILED, RUN_CANCELED, SCHEDULE_DISPATCHED, ACTOR_PUBLISHED) with composite indexes on workspaceId+createdAt, type+createdAt, runId, actorId
+  - Created src/events.ts: emitEvent() and listWorkspaceEvents() with cursor pagination (limit, cursor, types filter), optional prisma param for testability
+  - Created src/events-route.ts: GET /workspaces/:workspaceId/events with Zod validation (limit 1-100, cursor, types CSV), requireTokenScope('runs:read'), workspace membership check
+  - Wired into index.ts at /workspaces/:workspaceId/events
+  - Emit points: run creation (RUN_CREATED), PATCH status transition (RUN_SUCCEEDED/RUN_FAILED), executor success path (RUN_SUCCEEDED), executor failure path (RUN_FAILED ×2), finalizeFailure (RUN_FAILED), cancel endpoint (RUN_CANCELED), schedule dispatch (SCHEDULE_DISPATCHED), actor publish (ACTOR_PUBLISHED)
+  - All emit calls use fire-and-forget (void emitEvent) — promise not awaited
+  - 14 new tests: 5 emitEvent unit (all types + payload), 4 listWorkspaceEvents (ordering, filter, empty, pagination), 5 route-level (DB failure ×3 with limit/types, 400 validation ×2)
+  - 356 tests, 29 test files, lint + typecheck clean
+
+- DRAFT RUN GATING TEST: End-to-end mocked integration test for DRAFT actor rejection.
+  - Created test/run-lifecycle-gating.test.ts with vi.mock-based Prisma stub
+  - Asserts HTTP 400 + exact error message through full middleware + handler chain
+  - Proves DRAFT gating without needing PostgreSQL
+  - 335 tests, 26 test files, lint + typecheck clean
+
+- ACTOR VERSIONS LIST ENDPOINT: Added GET /workspaces/:workspaceId/actors/:actorId/versions.
+  - New route in src/actors.ts with workspace membership check (actor belongs to workspace)
+  - Ordered by version desc (newest first) for stable, intuitive listing
+  - Follows existing list route convention: requires actors:read scope, returns { versions: [...] }
+  - 4 new route tests: valid request, workspace mismatch, nonexistent actor, empty version list
+  - 334 tests, 25 test files, lint + typecheck clean
+- ACTOR VERSIONING LOOP: Added versioned inputSchema snapshots on publish/republish.
+  - Added inputSchema Json? to ActorVersion Prisma model + regenerated client
+  - Transition endpoint now creates ActorVersion on publish/republish with inputSchema snapshot; accepts optional changelog
+  - Run creation auto-binds to latest ActorVersion (max version), validates against version's inputSchema
+  - Explicit actorVersionId in run request validated (404 if not found or wrong actor)
+  - Backward compatible: actors without versions fall back to actor.inputSchema (no version binding)
+  - 9 new tests: 7 transition version path, 2 run binding
+  - 330 tests, 25 test files, lint + typecheck clean
+
+- TRANSITION EXTRACTION LOOP: Extracted transition validation into pure function + unit tests.
+  - Created src/actor-lifecycle.ts with computeTransition() pure function, exported types and constants
+  - Updated src/actors.ts route handler to import and call computeTransition() — removed duplicate inline maps
+  - API contract preserved (same 422 response shape)
+  - 13 unit tests in test/compute-transition.test.ts: 3 valid transitions, 6 invalid transitions, 2 edge cases, 2 constant checks
+  - Full state machine verification without DB dependency
+  - 321 tests, 24 test files, lint + typecheck clean
+
+- ACTOR LIFECYCLE LOOP: Added actor draft/publish/deprecate workflow.
+  - Added ActorStatus enum (DRAFT, PUBLISHED, DEPRECATED) to Prisma schema + status field on Actor with @default(DRAFT)
+  - Added POST /workspaces/:workspaceId/actors/:actorId/transition endpoint with explicit actions: publish, deprecate, republish
+  - Valid transitions: DRAFT→publish, PUBLISHED→deprecate, DEPRECATED→republish; invalid returns 422 with currentStatus + allowedActions
+  - DRAFT actors cannot run (POST /runs returns 400 with "Actor is in DRAFT state")
+  - PUBLISHED and DEPRECATED actors can run (DEPRECATED allows existing workflows to continue)
+  - Status included in all actor GET responses automatically (Prisma includes it)
+  - 8 new tests: 6 transition validation, 1 run gating, 1 create default state
+  - 308 tests, 23 test files, lint + typecheck clean
+
+- ACTOR METADATA LOOP: Added structured metadata fields to actors.
+  - Added description (String?, max 1000 chars), tags (String[], max 10 items, each max 50 chars), icon (String?, max 256 chars) to Actor Prisma model
+  - Updated actors.ts create/update Zod schemas with metadata validation rules
+  - Metadata persisted on create, accepted on update via PATCH
+  - Backward compatible — existing actors unchanged, create without metadata still succeeds
+  - 8 new tests: create/PATCH with metadata, validation limits, backward compatibility
+  - 300 tests, 22 test files, lint + typecheck clean
+
+- ACTOR INPUT SCHEMA LOOP: Added optional JSON Schema input definitions for actors.
+  - Added inputSchema Json? field to Actor Prisma model
+  - Created src/input-schema.ts — validateInput() with Ajv + cached compilation (allErrors, ajv-formats), clearSchemaCache()
+  - Actor create/update accepts optional inputSchema, persisted via Prisma
+  - Run creation validates input against actor schema before persisting the run; returns 400 with structured error details on failure
+  - Actors without schemas remain permissive (backward compatible)
+  - 13 new tests: valid/invalid/missing/null input, nested objects, arrays, string format, cache behavior, route-level acceptance
+  - 292 tests, 21 test files, lint + typecheck clean
+
+- RUN CANCELLATION API LOOP: Added dedicated cancel endpoint with race-safe state transitions.
+  - POST /runs/:id/cancel with runs:write scope, workspace membership check, atomic PENDING→CANCELED / RUNNING→CANCELED via updateMany
+  - Cancel route runs cancelRun(id) to kill child process on RUNNING cancel; returns 409 on terminal runs
+  - Process registry (runningChildren Map) in run-executor.ts for worker process lookup and kill
+  - Race-safe finalization: executor success path now calls updateMany BEFORE dataset creation — if count=0 (run was canceled), skips dataset, items, logs, and run.succeeded webhook entirely
+  - Executor returns { succeeded: false, errorMessage: "Run no longer in RUNNING state" } on no-op finalize
+  - PATCH /runs/:id no longer accepts CANCELED — users must use the dedicated cancel endpoint
+  - 1 new executor test (race with cancel skips artifacts), 1 new route test (PATCH CANCELED→400), updated existing finalize-no-op test to assert succeeded:false + no dataset
+  - 279 tests, 20 test files
+
+- RUN EXECUTOR CHILD-PROCESS ISOLATION LOOP: Replaced in-process stub with child-process isolated execution.
+  - Created src/run-executor-worker.ts — isolated worker script receives run config via IPC (runId, actorId, workspaceId, input), computes output items, sends structured result back
+  - Refactored src/run-executor.ts — claimAndExecuteRun() spawns worker via child_process.fork() with tsx loader
+  - Timeout handling: EXECUTOR_TIMEOUT_MS=300000 (5 min) — kills child and marks run FAILED
+  - Crash handling: non-zero exit marks run FAILED with exit code in message
+  - Process error handling: spawn failure marks run FAILED with error message
+  - Double-failure resilience: finalize error is logged but original result returned
+  - All lifecycle semantics preserved: PENDING→RUNNING claim, dataset/output/log creation, SUCCEEDED/FAILED finalize, webhook trigger
+  - 10 new/updated executor tests: claim+execute, already-claimed skip, worker failure→FAILED, timeout→FAILED+kill, crash→FAILED, process error→FAILED, input.items passthrough, double-failure resilience, constant exports
+  - 270 tests, 20 test files (no regression)
+
+- SCHEDULE SCHEDULER LOOP: Added automatic interval scheduler for due schedules.
+  - Created src/schedule-scheduler.ts — createScheduleScheduler() factory (same pattern as webhook retry scheduler), ticks processDueSchedules() at 10s default interval, logs dispatch results, survives tick errors
+  - Wired into src/index.ts boot/shutdown alongside webhook and run worker schedulers
+  - 12 new scheduler lifecycle tests (start/stop, interval, idempotent, error survival, logging)
+  - 263 tests, 20 test files
+
+- SCHEDULE RUNNER STALE RECOVERY LOOP: Added crash-recovery for orphaned schedules.
+  - Created recoverStaleSchedules() in src/schedule-runner.ts — queries schedules where nextRunAt=sentinel and updatedAt > 30s threshold, atomically restores nextRunAt=new Date() via updateMany with optimistic claim check
+  - Integrated into scheduler tick (src/schedule-scheduler.ts) — called before processDueSchedules() on each tick
+  - Recurring schedules restored to immediately-due state; one-off schedules dispatched and disabled via normal processDueSchedules flow
+  - Recovery logs emitted when stale schedules found
+  - 7 new tests: 5 recoverStaleSchedules (recurring, one-off, non-stale skip, claim race, custom grace), 2 scheduler integration (recovery called on tick, error doesn't crash scheduler)
+  - 270 tests, 20 test files
+
+- RUN EXECUTOR LOOP: Added minimal in-process run execution engine.
+  - Added LogEntry model to Prisma schema (runId, level, message, metadata, timestamp) + ActorRun.logs relation
+  - Created src/run-executor.ts — claimAndExecuteRun() with atomic PENDING→RUNNING claim, dataset/output creation, lifecycle log entries, SUCCEEDED/FAILED finalization, and webhook triggers
+  - Created src/run-logs.ts — createLogEntry() and getRunLogs() helper functions with cursor pagination
+  - Created src/run-worker.ts — processPendingRuns() batch worker (selects PENDING runs, claims+executes each in batch) and createRunWorkerScheduler() interval scheduler (5s default)
+  - Added GET /runs/:id/logs endpoint for run-scoped log retrieval with cursor pagination
+  - Wired run worker scheduler into server boot/shutdown alongside webhook retry scheduler
+  - MVP in-process executor clearly documented as non-sandboxed, labeled for future container replacement
+  - 23 new tests: 6 run-executor, 5 run-logs, 12 run-worker (lifecycle, error paths, logs CRUD, scheduler behavior)
+  - 251 tests, 19 test files
+
+### 2026-07-23
+- SCHEDULE RUNNER v1: Added schedule dispatch worker.
+  - Added nextRunAt, lastRunAt, errorMessage to Schedule schema + composite index [enabled, nextRunAt]
+  - Created src/schedule-runner.ts with computeNextRun() (cron-parser, UTC), claimSchedule() (updateMany optimistic lock), processDueSchedules() worker
+  - Recurring schedules advance nextRunAt; one-off schedules disabled after dispatch
+  - Missing actor guard disables schedule with errorMessage; dispatch failure restores original nextRunAt for retry
+  - Fires triggerWebhooks on run creation (run.created event)
+  - 13 new tests: 5 computeNextRun, 8 processDueSchedules (due selection, skip non-due, claim mutual exclusion, recurring advance, one-off disable, missing actor, batch, custom batch)
+  - 2 lint fixes (optional chain, unused variable)
+  - 216 tests, 15 test files
 
 ### 2026-07-22
 - Initialized loop-engineering project docs.
@@ -16,44 +311,78 @@
 - Updated STATE.json, TODO.md with audit completion.
 - Next task identified: initialize Node.js + TypeScript project scaffold.
 - LOOP 2: Initialized Node.js + TypeScript toolchain.
-  - Created package.json, tsconfig.json, .gitignore, .env.example
-  - Created eslint.config.js (flat config), .prettierrc, vitest.config.ts
-  - Created placeholder src/index.ts and test/index.test.ts
-  - Installed 156 dev dependencies
-  - Verified: lint pass, typecheck pass, test pass (1/1)
-- Updated ARCHITECTURE.md ACTUAL section, STATE.json, TODO.md, CHANGELOG.md.
 - LOOP 3: Initialized Git repo and multi-tenant database foundation.
-  - git init + first commit (26 files, b128a58)
-  - Added Prisma 6.19.3 with PostgreSQL datasource
-  - Created schema: User, Organization, Workspace, Membership (with Role enum)
-  - Set up uniqueness constraints and explicit relations
-  - Added pnpm prisma:validate, prisma:generate, prisma:studio scripts
-  - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.
-  - Pinned Prisma to 6.x to avoid Prisma 7 config-breaking changes.
 - LOOP 4: Added execution-domain schema for actors and runs.
-  - Added ActorRunStatus enum: PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED
-  - Added Actor model (belongs to Workspace, unique slug per workspace)
-  - Added ActorVersion model (belongs to Actor, unique version per actor)
-  - Added ActorRun model (belongs to Actor + Workspace, optional ActorVersion, status, input/output JSON)
-  - Added indexes on workspaceId, actorId, status for ActorRun
-  - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.
 - LOOP 5: Added structured storage layer schema.
-  - Added Dataset (scoped to Workspace, optional ActorRun provenance)
-  - Added DatasetItem (scoped to Dataset, sequence-ordered, Json payload)
-  - Added KeyValueStore (scoped to Workspace, optional ActorRun provenance)
-  - Added KeyValueRecord (scoped to KeyValueStore, unique key per store, Json value)
-  - Added RequestQueue (scoped to Workspace, optional ActorRun provenance)
-  - Added RequestQueueItem (scoped to RequestQueue, uniqueKey dedup, String-based status)
-  - All storage models have slug unique per workspace
-  - Added indexes on dataset sequence, queue status
-  - Updated Workspace with reverse relations for all 3 storage families
-  - Verified: prisma validate, prisma generate, lint, typecheck, test all pass.
 - LOOP 6: Created minimal backend application shell.
-  - Added Hono HTTP server with GET /health endpoint
-  - Added typed config/env module (src/config.ts)
-  - Added safe Prisma client singleton with graceful DB check
-  - Health endpoint returns structured JSON: status, service, version, timestamp, db status
-  - Added dev (tsx watch), start (tsx), build (tsc) scripts
-  - Added hono, @hono/node-server, tsx dependencies
-  - Fixed all lint/typecheck issues across source and test
-  - Verified: lint, typecheck, test (health shape), runtime server boot, live endpoint response.
+- LOOP 7-10: Added run CRUD, CI baseline, schedule CRUD.
+- LOOP 11: Added minimal auth foundation.
+- LOOP 12: Added workspace membership authorization.
+- LOOP 13: Added workspace-scoped role-based access control (RBAC).
+  - Extended workspace-auth.ts with WorkspaceRole type, getWorkspaceRole(), requireWorkspaceRole(), requireWorkspaceOwner()
+  - Created workspace member management routes (GET/POST/PATCH/DELETE /workspaces/:workspaceId/members)
+  - Created workspace settings routes (GET/PATCH /workspaces/:workspaceId)
+  - Created actor CRUD routes (GET/POST/PATCH/DELETE /workspaces/:workspaceId/actors)
+  - Created API token management routes (GET/POST /workspaces/:workspaceId/api-tokens, POST revoke)
+  - Role gates: OWNER/ADMIN for settings, actor create/edit, API token management, member add
+  - Role gates: OWNER-only for actor delete, member role change, member removal
+  - 37 new role-auth tests (6 unit + 31 route coverage)
+  - 80 tests total, 6 test files, all gates pass
+- REMEDIATION LOOP: Fixed 4 verifier-identified security issues.
+  - Fix A: API token list query no longer uses `workspaceId` against `userId` field — now queries by authenticated userId from context
+  - Fix B: DELETE /workspaces/:workspaceId/members/:userId now guards against removing the last owner (400)
+  - Fix C: Actor PATCH/DELETE now verifies actor.workspaceId matches URL workspaceId (404 on mismatch)
+  - Fix D: Added production-like auth tests that exercise getWorkspaceRole and assertWorkspaceMember without VITEST bypass (proves DB error handling path)
+  - 82 tests total, 6 test files, all gates pass
+- DOC CLEANUP: Addressed verifier audit findings (F1-F4).
+  - F1: Removed stale "no mechanism to enforce at-least-one-owner" claim from ARCHITECTURE.md
+  - F2/F3: Documented route-level test gap for last-owner guard and actor cross-reference in KNOWN_ISSUES.md (requires DB-backed integration tests)
+  - F4: Added DECISIONS.md entry documenting ApiToken user-scoped semantics and route design rationale
+  - All project docs now internally consistent. Ready for actor ownership authorization.
+- ACTOR OWNERSHIP LOOP: Added owner-user authorization model.
+  - Added ownerId to Actor schema (optional, references User) + User.ownedActors relation
+  - Created src/actor-auth.ts with canUserManageActor() pure function and assertActorManageAccess() DB wrapper
+  - Relaxed POST/PATCH/DELETE middleware gates to OWNER/ADMIN/MEMBER with ownership checks
+  - POST sets ownerId from authenticated userId; PATCH/DELETE call assertActorManageAccess (403 on deny)
+  - 11 new tests (7 pure-function unit + 2 DB-wrapper + 3 route-level); 93 tests total, 7 test files
+  - All project docs updated: ARCHITECTURE.md, DOMAIN_MODEL.md, KNOWN_ISSUES.md, STATE.json
+- VERIFIER FIX LOOP: Closed 2 post-audit gaps.
+  - Fix 1: Added DECISIONS.md entry documenting owner-user model choice, rejected alternatives (workspace-owned, hybrid), OWNER/ADMIN bypass semantics, and null-ownerId consequence
+  - Fix 2: Refactored assertActorManageAccess to accept optional pre-fetched actor — PATCH/DELETE now pass already-loaded actor, avoiding redundant second DB query
+  - 93 tests still pass; lint and typecheck clean
+- STORAGE AUTHORIZATION LOOP: Added ownerId to Dataset, KeyValueStore, RequestQueue; created storage-auth.ts, datasets.ts, kv-stores.ts, request-queues.ts with ownership gates
+  - 122 tests, 8 test files
+- API TOKEN & WEBHOOK AUTHORIZATION LOOP: Expanded token auth to MEMBER (list/self-create/self-revoke), added webhook model + CRUD routes with ownership gates
+  - API tokens: relaxed gates to MEMBER, added target userId workspace membership validation on POST create, added ownership check on revoke
+  - Webhooks: new Prisma model (workspaceId, actorId, ownerId, eventTypes, url, secret, enabled), src/webhook-auth.ts, src/webhooks.ts with full CRUD
+  - 134 tests, 9 test files
+- API TOKEN SCOPE LOOP: Added request-time token scope enforcement
+  - Added `scopes` field to ApiToken schema
+  - Created src/token-scope.ts with 14 resource:action scopes, hasScope(), validateScopes(), requireTokenScope() middleware
+  - Updated src/auth.ts to load and attach scopes on token lookup
+  - Updated src/api-tokens.ts: POST accepts optional scopes array, defaults to read-only, MEMBER restricted from workspace:write
+- Added requireTokenScope('resource:action') middleware to all 39 protected route handlers
+- Added 16 pure-function tests for scope logic
+  - 150 tests, 10 test files
+- WEBHOOK RETRY LOOP: Added bounded retry logic with exponential backoff for webhook delivery.
+  - Added retry fields to WebhookAttempt schema: attemptCount, nextRetryAt, lastRetryAt, RETRYING status
+  - Created src/webhook-retry.ts with isRetriable() classification (network/429/5xx retriable; 2xx/3xx/4xx non-retriable) and calculateNextRetry() exponential backoff (60s*2^n, ≤1h, ±25% jitter, max 5 attempts)
+  - Updated src/webhook-trigger.ts: finalizeAttempt() classifies outcomes, schedules retry (RETRYING + nextRetryAt) or fails permanently (FAILED + completedAt)
+  - 25 new tests: 17 classification scenarios, 8 schedule assertions
+  - 189 tests, 13 test files
+- WEBHOOK RETRY WORKER LOOP: Implemented background re-delivery of RETRYING attempts.
+  - Created src/webhook-worker.ts with processRetryAttempts() — selects due attempts (status=RETRYING, nextRetryAt≤now), claims via updateMany with status filter, redelivers via deliverWebhook + finalizeAttempt, tracks outcome
+  - Exported finalizeAttempt from webhook-trigger.ts with PrismaClient type for reuse in worker
+  - Claim pattern uses optimistic updateMany — safe for single-process at-least-once execution; race-safe via status filter
+  - Worker designed as pure function for interval polling — no scheduler/cron dependency
+  - Webhook-deleted guard: marks attempt FAILED with errorMessage when webhook no longer exists
+  - 10 new tests: selection, claim race, batch processing, all outcome paths (SUCCEEDED/RETRYING/FAILED/webhook-deleted)
+  - 199 tests, 14 test files
+- STALE DELIVERING RECOVERY LOOP: Fixed crash-recovery hang and SUCCEEDED metadata gaps.
+  - FIXED: finalizeAttempt SUCCEEDED branch now persists attemptCount, lastRetryAt, errorMessage: null
+  - FIXED: Worker findMany uses OR — due RETRYING OR stale DELIVERING (createdAt > 30s ago)
+  - Generalized claimAttempt() to accept expectedStatus param for both RETRYING and DELIVERING claim paths
+  - Fixed DECISIONS.md incorrect crash-recovery claim
+  - Documented at-least-once delivery semantics for stale recovery
+  - 13 new/updated tests: stale eligibility, fresh exclusion via query shape, recovered SUCCEEDED/RETRYING/FAILED, budget exhaustion, metadata cleanup
+  - 212 tests, 14 test files

@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: actor
+      POSTGRES_PASSWORD: actor_secret
+      POSTGRES_DB: actor_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U actor -d actor_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://actor:actor_secret@postgres:5432/actor_platform
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

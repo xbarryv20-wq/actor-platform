@@ -4,9 +4,9 @@
 
 This file describes the **target** domain model. The ACTUAL schema may be a subset.
 
-### ACTUAL implementation (loop 5):
+### ACTUAL implementation (loop 10+):
 - User, Organization, Membership (MembershipRole: OWNER, ADMIN, MEMBER), Workspace
-- Actor (belongs to Workspace, slug unique per workspace)
+- Actor (belongs to Workspace, slug unique per workspace, optional ownerId referencing User)
 - ActorVersion (belongs to Actor, version unique per actor, optional sourceReference, changelog)
 - ActorRun (belongs to Actor + Workspace, optional ActorVersion, status enum, input/output Json?, errorMessage?, timestamps)
 - ActorRunStatus: PENDING, RUNNING, SUCCEEDED, FAILED, CANCELED
@@ -16,6 +16,11 @@ This file describes the **target** domain model. The ACTUAL schema may be a subs
 - KeyValueRecord (belongs to KeyValueStore, unique key per store, Json value, optional contentType)
 - RequestQueue (belongs to Workspace, optional ActorRun, slug unique per workspace)
 - RequestQueueItem (belongs to RequestQueue, uniqueKey dedup, String-based status, optional url/payload)
+- Schedule (belongs to Workspace + Actor, optional ActorVersion, cronExpression, inputOverride?, enabled)
+- ApiToken (belongs to User, tokenHash unique, label, lastUsedAt?, revokedAt?)
+- WorkspaceMembership (belongs to User + Workspace, role string default "MEMBER", unique on [userId, workspaceId])
+
+WorkspaceMembership.role enforced at runtime via getWorkspaceRole() / requireWorkspaceRole() middleware (RBAC: OWNER, ADMIN, MEMBER).
 
 Fields not yet in schema but listed below are aspirational targets.
 

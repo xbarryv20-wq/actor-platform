@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npx prisma generate && npx tsc",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install",
+  "devCommand": "pnpm run dev",
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  }
+}
