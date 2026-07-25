@@ -305,7 +305,7 @@ async function renderDashboard(){
   if(Array.isArray(runs) && runs.length>0){
     html += '<div class="widget card"><div class="card-header"><h2>Recent Runs</h2></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Actor</th><th>Status</th><th>Created</th></tr></thead><tbody>';
     for(const r of runs.slice(0,10)){
-      html += '<tr><td class="mono" style="font-family:monospace;font-size:0.8rem"><a href="#" data-nav="run">'+esc(r.id.substring(0,12))+'</a></td>';
+      html += '<tr><td class="mono" style="font-family:monospace;font-size:0.8rem"><a href="#" data-nav="run" data-nav-id="'+r.id+'">'+esc(r.id.substring(0,12))+'</a></td>';
       html += '<td style="font-size:0.85rem">'+esc(r.actorId?(r.actorId.substring(0,12)):'-')+'</td>';
       html += '<td>'+statusBadge(r.status)+'</td>';
       html += '<td>'+dateStr(r.createdAt)+'</td></tr>';
@@ -318,7 +318,7 @@ async function renderDashboard(){
   if(upcoming.length>0){
     html += '<div class="widget card"><div class="card-header"><h2>Upcoming Schedules</h2></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Actor</th><th>Cron</th><th>Next Run</th></tr></thead><tbody>';
     for(const s of upcoming){
-      html += '<tr><td class="mono" style="font-family:monospace;font-size:0.8rem"><a href="#" data-nav="schedule">'+esc(s.id.substring(0,12))+'</a></td>';
+      html += '<tr><td class="mono" style="font-family:monospace;font-size:0.8rem"><a href="#" data-nav="schedule" data-nav-id="'+s.id+'">'+esc(s.id.substring(0,12))+'</a></td>';
       html += '<td>'+esc(s.actorId.substring(0,12))+'</td>';
       html += '<td><code>'+esc(s.cronExpression)+'</code></td>';
       html += '<td>'+dateStr(s.nextRunAt)+'</td></tr>';
@@ -354,7 +354,7 @@ async function renderActors(){
 
   html += '<div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Slug</th><th>Status</th><th>Tags</th><th>Created</th><th></th></tr></thead><tbody>';
   for(const a of list){
-    html += '<tr><td><a href="#" data-nav="actor"><strong>'+esc(a.name)+'</strong></a></td>';
+    html += '<tr><td><a href="#" data-nav="actor" data-nav-id="'+a.id+'"><strong>'+esc(a.name)+'</strong></a></td>';
     html += '<td>'+esc(a.slug)+'</td>';
     html += '<td>'+statusBadge(a.status)+'</td>';
     html += '<td>'+(a.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</td>';
@@ -454,7 +454,7 @@ async function renderRuns(){
       html += '<td>'+statusBadge(r.status)+'</td>';
       html += '<td>'+dateStr(r.createdAt)+'</td>';
       html += '<td>'+dateStr(r.finishedAt||r.completedAt)+'</td>';
-      html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="run">View</button></td></tr>';
+      html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="run" data-nav-id="'+r.id+'">View</button></td></tr>';
     }
     html += '</tbody></table></div></div>';
     return html;
@@ -531,7 +531,7 @@ async function renderSchedules(){
       html += '<td><code>'+esc(s.cronExpression)+'</code></td>';
       html += '<td>'+(s.enabled?'<span class="badge badge-published">yes</span>':'<span class="badge badge-deprecated">no</span>')+'</td>';
       html += '<td>'+dateStr(s.nextRunAt)+'</td>';
-      html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="schedule">View</button></td></tr>';
+      html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="schedule" data-nav-id="'+s.id+'">View</button></td></tr>';
     }
     html += '</tbody></table></div></div>';
     return html;
@@ -671,11 +671,11 @@ async function renderMarketplace(){
     html += '<div class="card"><div class="table-wrap"><table><thead><tr><th>Actor</th><th>Category</th><th>Tags</th><th>Published</th><th></th></tr></thead><tbody>';
     for(const l of listings){
       const a = l.actor||{};
-      html += '<tr><td><a href="#" data-nav="marketplace-listing"><strong>'+esc(a.name||'Unnamed')+'</strong></a><br><span style="font-size:0.8rem;color:var(--muted)">'+esc(a.slug||'')+'</span></td>';
+      html += '<tr><td><a href="#" data-nav="marketplace-listing" data-nav-id="'+l.id+'"><strong>'+esc(a.name||'Unnamed')+'</strong></a><br><span style="font-size:0.8rem;color:var(--muted)">'+esc(a.slug||'')+'</span></td>';
       html += '<td>'+esc(l.category||'-')+'</td>';
       html += '<td>'+(a.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</td>';
       html += '<td>'+dateStr(l.createdAt)+'</td>';
-      html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="marketplace-listing">View</button></td></tr>';
+      html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="marketplace-listing" data-nav-id="'+l.id+'">View</button></td></tr>';
     }
     html += '</tbody></table></div></div>';
   } catch(e){
@@ -736,11 +736,11 @@ async function renderStorage(){
     } else {
       html += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Slug</th><th>Items</th><th>Created</th><th></th></tr></thead><tbody>';
       for(const d of dlist){
-        html += '<tr><td><a href="#" data-nav="dataset"><strong>'+esc(d.name)+'</strong></a></td>';
+        html += '<tr><td><a href="#" data-nav="dataset" data-nav-id="'+d.id+'"><strong>'+esc(d.name)+'</strong></a></td>';
         html += '<td>'+esc(d.slug)+'</td>';
         html += '<td>'+(d._count?d._count.items:'?')+'</td>';
         html += '<td>'+dateStr(d.createdAt)+'</td>';
-        html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="dataset">View</button></td></tr>';
+        html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="dataset" data-nav-id="'+d.id+'">View</button></td></tr>';
       }
       html += '</tbody></table></div>';
     }
@@ -759,11 +759,11 @@ async function renderStorage(){
     } else {
       html += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Slug</th><th>Records</th><th>Created</th><th></th></tr></thead><tbody>';
       for(const k of klist){
-        html += '<tr><td><a href="#" data-nav="kvstore"><strong>'+esc(k.name)+'</strong></a></td>';
+        html += '<tr><td><a href="#" data-nav="kvstore" data-nav-id="'+k.id+'"><strong>'+esc(k.name)+'</strong></a></td>';
         html += '<td>'+esc(k.slug)+'</td>';
         html += '<td>'+(k._count?k._count.records:'?')+'</td>';
         html += '<td>'+dateStr(k.createdAt)+'</td>';
-        html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="kvstore">View</button></td></tr>';
+        html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="kvstore" data-nav-id="'+k.id+'">View</button></td></tr>';
       }
       html += '</tbody></table></div>';
     }
@@ -782,11 +782,11 @@ async function renderStorage(){
     } else {
       html += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Slug</th><th>Items</th><th>Created</th><th></th></tr></thead><tbody>';
       for(const q of qlist){
-        html += '<tr><td><a href="#" data-nav="requestqueue"><strong>'+esc(q.name)+'</strong></a></td>';
+        html += '<tr><td><a href="#" data-nav="requestqueue" data-nav-id="'+q.id+'"><strong>'+esc(q.name)+'</strong></a></td>';
         html += '<td>'+esc(q.slug)+'</td>';
         html += '<td>'+(q._count?q._count.items:'?')+'</td>';
         html += '<td>'+dateStr(q.createdAt)+'</td>';
-        html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="requestqueue">View</button></td></tr>';
+        html += '<td style="text-align:right"><button class="btn btn-sm btn-outline" data-nav="requestqueue" data-nav-id="'+q.id+'">View</button></td></tr>';
       }
       html += '</tbody></table></div>';
     }
