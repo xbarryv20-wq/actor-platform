@@ -15,3 +15,5 @@ verify.cjs
 fix_*.cjs
 gen_token.cjs
 *.bak
+
+.vercel

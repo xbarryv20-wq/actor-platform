@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx prisma generate && npx tsc",
+  "buildCommand": "npx prisma generate && npx tsc --project tsconfig.json",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
   "devCommand": "pnpm run dev",
